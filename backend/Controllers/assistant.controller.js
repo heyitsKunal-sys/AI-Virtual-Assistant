@@ -1,341 +1,827 @@
-import { generateGeminiResponse } from "../configs/gemini.js"
-import { generateOpenAIResponse } from "../configs/openai.js"
-import User from "../Models/user.model.js"
+import { generateGeminiResponse } from "../configs/gemini.js";
+import { generateOpenAIResponse } from "../configs/openai.js";
+import User from "../Models/user.model.js";
 
+
+// ============================================================
+// GET ASSISTANT CONFIG
+// ============================================================
 
 export const getAssistantConfig = async (req, res) => {
-    try {
-        const { userId } = req.params
 
-        const user = await User.findById(userId).select("-geminiApiKey")
+    try {
+
+        const { userId } =
+            req.params;
+
+
+        const user =
+            await User
+                .findById(userId)
+                .select("-geminiApiKey -openAiApiKey");
+
+
         if (!user) {
-            return res.status(404).json({ message: "failed to get user" })
+
+            return res
+                .status(404)
+                .json({
+                    message:
+                        "Failed to get user"
+                });
+
         }
 
-        return res.status(200).json({ message: "Assistant Config data ", user })
+
+        return res
+            .status(200)
+            .json({
+                message:
+                    "Assistant Config data",
+                user
+            });
 
     } catch (error) {
-        return res.status(500).json({ message: `Assistant Config failed ${error}` })
-    }
-}
 
+        console.log(
+            "Assistant Config Error:",
+            error
+        );
+
+
+        return res
+            .status(500)
+            .json({
+                message:
+                    "Assistant Config failed"
+            });
+
+    }
+
+};
+
+
+// ============================================================
+// ASK ASSISTANT
+// ============================================================
 
 export const askAssistant = async (req, res) => {
+
     try {
-        const { message, userId, navigationTarget, pageContext, currentUrl } = req.body
+
+        const {
+
+            message,
+
+            userId,
+
+            navigationTarget,
+
+            pageContext,
+
+            currentUrl,
+
+            isNavigationRequest
+
+        } = req.body;
+
+
+        // ====================================================
+        // BASIC VALIDATION
+        // ====================================================
 
         if (!message || !userId) {
-            return res.status(400).json({ message: "Message and UserId are required" })
+
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Message and UserId are required"
+                });
+
         }
 
-        const user = await User.findById(userId)
+
+        // ====================================================
+        // FIND USER
+        // ====================================================
+
+        const user =
+            await User.findById(userId);
+
 
         if (!user) {
-            return res.status(404).json({ message: "User is not found" })
+
+            return res
+                .status(404)
+                .json({
+                    success: false,
+                    message:
+                        "User is not found"
+                });
+
         }
-        const currentProvider = user.provider || "gemini"
-        const hasApiKey = currentProvider === "openai" ? !!user.openAiApiKey : !!user.geminiApiKey
+
+
+        // ====================================================
+        // PROVIDER
+        // ====================================================
+
+        const currentProvider =
+            user.provider || "gemini";
+
+
+        const hasApiKey =
+            currentProvider === "openai"
+                ? !!user.openAiApiKey
+                : !!user.geminiApiKey;
+
 
         if (!hasApiKey) {
-            return res.status(400).json({ message: `${currentProvider === "openai" ? "OpenAI" : "Gemini"} API key is not added` })
+
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        `${currentProvider === "openai"
+                            ? "OpenAI"
+                            : "Gemini"} API key is not added`
+                });
+
         }
 
-        if (user.plan === "free"
-            && user.totalMessages >= user.requestLimit) {
-            return res.status(400).json({ message: "Free limit reached" })
+
+        // ====================================================
+        // FREE PLAN LIMIT
+        // ====================================================
+
+        if (
+            user.plan === "free" &&
+            user.totalMessages >= user.requestLimit
+        ) {
+
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Free limit reached"
+                });
+
         }
 
-        if (user.plan === "pro" && new Date(user.proExpiresAt) < new Date()) {
-            user.plan === "free"
 
-            await user.save()
+        // ====================================================
+        // PRO PLAN EXPIRATION
+        // ====================================================
 
-            return res.status(400).json({ message: "Pro plan expired" })
+        if (
+            user.plan === "pro" &&
+            user.proExpiresAt &&
+            new Date(user.proExpiresAt) < new Date()
+        ) {
+
+            user.plan = "free";
+
+            await user.save();
+
+
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Pro plan expired"
+                });
+
         }
 
-        const cleanMessage = message.toLowerCase()
 
-        const billingIntent = () => {
-            const billingPatterns = [
-                "how many messages", "messages left", "remaining messages", "message left", "how many message",
-                "free tier", "free plan", "billing", "limit left", "remaining limit", "messages remaining",
-                "subscription", "plan status", "upgrade my plan", "my plan", "expired", "renew"
-            ]
+        // ====================================================
+        // CLEAN MESSAGE
+        // ====================================================
 
-            const isBillingQuestion = billingPatterns.some((pattern) => cleanMessage.includes(pattern))
+        const cleanMessage =
+            message
+                .toLowerCase()
+                .trim();
 
-            if (!isBillingQuestion) return null
+
+        // ====================================================
+        // ACCOUNT / BILLING INTENT
+        // ====================================================
+        //
+        // IMPORTANT:
+        // Only detect questions about the USER'S ChatPlug
+        // account.
+        //
+        // Do NOT trigger this for:
+        //
+        // "What's on the billing page?"
+        // "Tell me about pricing"
+        // "What does your subscription page contain?"
+        //
+        // Those should go to the AI.
+        // ====================================================
+
+        const billingPatterns = [
+
+            "how many messages",
+
+            "messages left",
+
+            "remaining messages",
+
+            "message left",
+
+            "how many message",
+
+            "free tier",
+
+            "free plan",
+
+            "my plan",
+
+            "my subscription",
+
+            "my subscription status",
+
+            "plan status",
+
+            "upgrade my plan",
+
+            "when does my plan expire",
+
+            "when will my plan expire",
+
+            "how many requests left",
+
+            "how many requests do i have",
+
+            "how much usage do i have"
+
+        ];
+
+
+        const isAccountQuestion =
+            billingPatterns.some(
+                (pattern) =>
+                    cleanMessage.includes(
+                        pattern
+                    )
+            );
+
+
+        if (isAccountQuestion) {
 
             if (user.plan === "free") {
-                const remaining = Math.max(0, user.requestLimit - user.totalMessages)
-                return {
+
+                const remaining =
+                    Math.max(
+                        0,
+                        user.requestLimit -
+                        user.totalMessages
+                    );
+
+
+                return res.json({
+
                     success: true,
-                    response: `You have ${remaining} messages left on the free tier.`,
-                }
+
+                    response:
+                        `You have ${remaining} messages left on the free tier.`
+
+                });
+
             }
 
-            return {
+
+            return res.json({
+
                 success: true,
-                response: "You are on the Pro plan, so your message limit does not apply.",
-            }
+
+                response:
+                    "You are on the Pro plan, so your message limit does not apply."
+
+            });
+
         }
 
-        const faqIntent = () => {
-            const faqAnswers = {
-                login: ["login", "sign in", "log in", "signin", "how do i log in"],
-                signup: ["signup", "sign up", "register", "create account", "how do i sign up"],
-                settings: ["settings", "account settings", "profile settings", "preferences"],
-                privacy: ["privacy", "privacy policy", "terms", "terms and conditions"],
-                contact: ["contact", "support", "help", "reach us", "get in touch"],
-                pricing: ["pricing", "plans", "prices", "cost", "fees", "subscription"],
+
+        // ====================================================
+        // NAVIGATION
+        // ====================================================
+        //
+        // THIS IS THE MOST IMPORTANT PART.
+        //
+        // We ONLY navigate if the frontend explicitly
+        // determined that the user requested navigation.
+        //
+        // Mentioning "about", "pricing", "billing", etc.
+        // is NOT enough.
+        // ====================================================
+
+        if (
+            user.enableNavigation &&
+            Boolean(isNavigationRequest)
+        ) {
+
+            // ------------------------------------------------
+            // Use navigation target selected by frontend
+            // ------------------------------------------------
+
+            if (
+                navigationTarget &&
+                navigationTarget.path
+            ) {
+
+                return res.json({
+
+                    success: true,
+
+                    action: "navigate",
+
+                    path:
+                        navigationTarget.path,
+
+                    response:
+                        `Opening ${navigationTarget.label || "that page"}`
+
+                });
+
             }
 
-            for (const [key, patterns] of Object.entries(faqAnswers)) {
-                if (patterns.some((pattern) => cleanMessage.includes(pattern))) {
-                    const map = {
-                        login: { path: "/login", response: "Open the login page." },
-                        signup: { path: "/signup", response: "Open the sign up page." },
-                        settings: { path: "/settings", response: "Open the settings page." },
-                        privacy: { path: "/privacy", response: "Open the privacy page." },
-                        contact: { path: "/contact", response: "Open the contact page." },
-                        pricing: { path: "/pricing", response: "Open the pricing page." },
-                    }
 
-                    return {
-                        success: true,
-                        action: "navigate",
-                        path: map[key].path,
-                        response: map[key].response,
-                    }
-                }
-            }
+            // ------------------------------------------------
+            // Fallback route detection
+            // ------------------------------------------------
 
-            return null
-        }
-
-        const inferRouteFromMessage = () => {
             const routeMap = [
-                { route: "/", keywords: ["home", "main", "landing", "welcome", "welcome page", "dashboard", "index"] },
-                { route: "/about", keywords: ["about", "about us", "our story", "company", "who we are"] },
-                { route: "/contact", keywords: ["contact", "contact us", "reach us", "get in touch", "support", "help", "call us"] },
-                { route: "/services", keywords: ["services", "service", "solutions", "what we do", "offerings"] },
-                { route: "/pricing", keywords: ["pricing", "plan", "plans", "package", "packages", "prices", "cost", "fees"] },
-                { route: "/billing", keywords: ["billing", "plans and billing", "payment", "payments", "upgrade", "checkout", "invoice"] },
-                { route: "/portfolio", keywords: ["portfolio", "projects", "our work", "case studies", "work"] },
-                { route: "/blog", keywords: ["blog", "articles", "news", "insights", "posts"] },
-                { route: "/faq", keywords: ["faq", "frequently asked questions", "questions", "help center"] },
-                { route: "/team", keywords: ["team", "our team", "people", "staff", "members"] },
-                { route: "/testimonials", keywords: ["testimonials", "reviews", "feedback", "stories", "customer reviews"] },
-                { route: "/login", keywords: ["login", "log in", "sign in", "signin", "account"] },
-                { route: "/signup", keywords: ["signup", "sign up", "register", "create account", "join now"] },
-                { route: "/settings", keywords: ["settings", "profile settings", "account settings", "preferences"] },
-                { route: "/privacy", keywords: ["privacy", "privacy policy", "data policy", "terms", "terms and conditions"] },
-                { route: "/profile", keywords: ["profile", "my profile", "account profile", "user profile"] },
-                { route: "/orders", keywords: ["orders", "my orders", "order history", "purchases"] },
-                { route: "/wishlist", keywords: ["wishlist", "saved items", "favorites", "saved products"] },
-                { route: "/cart", keywords: ["cart", "shopping cart", "checkout cart", "basket"] },
-                { route: "/checkout", keywords: ["checkout", "complete purchase", "payment page", "secure checkout"] },
-                { route: "/dashboard", keywords: ["dashboard", "admin dashboard", "user dashboard"] },
-                { route: "/builder", keywords: ["builder", "assistant builder", "setup assistant", "configure assistant"] },
-                { route: "/admin", keywords: ["admin", "admin panel", "management"] },
-                { route: "/docs", keywords: ["docs", "documentation", "guide", "tutorials"] },
-                { route: "/downloads", keywords: ["downloads", "download", "resources"] },
-                { route: "/book-demo", keywords: ["book demo", "demo", "schedule demo", "book a demo"] },
-                { route: "/contact-us", keywords: ["contact us page", "contact form", "contact us"] },
-                { route: "/careers", keywords: ["careers", "jobs", "join us", "career"] },
-                { route: "/partners", keywords: ["partners", "partner program", "affiliates"] },
-                { route: "/download", keywords: ["download app", "get app", "app download"] },
-                { route: "/features", keywords: ["features", "feature", "benefits"] },
-            ]
 
-            const match = routeMap.find((item) =>
-                item.keywords.some((keyword) => cleanMessage.includes(keyword))
-            )
+                {
+                    route: "/",
+                    keywords: [
+                        "home",
+                        "homepage",
+                        "home page",
+                        "main page",
+                        "landing page"
+                    ],
+                    label: "Home"
+                },
 
-            if (!match) return null
+                {
+                    route: "/about",
+                    keywords: [
+                        "about",
+                        "about us",
+                        "our story"
+                    ],
+                    label: "About"
+                },
 
-            return {
-                path: match.route,
-                label: match.route === "/" ? "Home" : match.route.replace("/", "").split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" "),
-            }
-        }
+                {
+                    route: "/contact",
+                    keywords: [
+                        "contact",
+                        "contact us",
+                        "reach us",
+                        "get in touch"
+                    ],
+                    label: "Contact"
+                },
 
-        const billingInfo = billingIntent()
-        if (billingInfo) {
-            return res.json(billingInfo)
-        }
+                {
+                    route: "/services",
+                    keywords: [
+                        "services",
+                        "service",
+                        "solutions"
+                    ],
+                    label: "Services"
+                },
 
-        const faqInfo = faqIntent()
-        if (faqInfo) {
-            return res.json(faqInfo)
-        }
+                {
+                    route: "/pricing",
+                    keywords: [
+                        "pricing",
+                        "pricing page",
+                        "plans",
+                        "packages"
+                    ],
+                    label: "Pricing"
+                },
 
-        if (user.enableNavigation) {
+                {
+                    route: "/billing",
+                    keywords: [
+                        "billing",
+                        "billing page"
+                    ],
+                    label: "Billing"
+                },
 
-            // Navigation Commands
-            const navigationWords = [
+                {
+                    route: "/portfolio",
+                    keywords: [
+                        "portfolio",
+                        "projects",
+                        "our work"
+                    ],
+                    label: "Portfolio"
+                },
 
-                "open",
-                "go",
-                "start",
-                "show",
-                "navigate",
-                "take me",
+                {
+                    route: "/blog",
+                    keywords: [
+                        "blog",
+                        "articles",
+                        "news"
+                    ],
+                    label: "Blog"
+                },
+
+                {
+                    route: "/faq",
+                    keywords: [
+                        "faq",
+                        "frequently asked questions",
+                        "help center"
+                    ],
+                    label: "FAQ"
+                },
+
+                {
+                    route: "/login",
+                    keywords: [
+                        "login",
+                        "log in",
+                        "sign in",
+                        "signin"
+                    ],
+                    label: "Login"
+                },
+
+                {
+                    route: "/signup",
+                    keywords: [
+                        "signup",
+                        "sign up",
+                        "register",
+                        "create account"
+                    ],
+                    label: "Sign Up"
+                },
+
+                {
+                    route: "/settings",
+                    keywords: [
+                        "settings",
+                        "account settings",
+                        "preferences"
+                    ],
+                    label: "Settings"
+                },
+
+                {
+                    route: "/privacy",
+                    keywords: [
+                        "privacy",
+                        "privacy policy",
+                        "terms"
+                    ],
+                    label: "Privacy"
+                },
+
+                {
+                    route: "/dashboard",
+                    keywords: [
+                        "dashboard",
+                        "dashboard page"
+                    ],
+                    label: "Dashboard"
+                },
+
+                {
+                    route: "/profile",
+                    keywords: [
+                        "profile",
+                        "profile page",
+                        "my profile"
+                    ],
+                    label: "Profile"
+                },
+
+                {
+                    route: "/cart",
+                    keywords: [
+                        "cart",
+                        "shopping cart"
+                    ],
+                    label: "Cart"
+                },
+
+                {
+                    route: "/checkout",
+                    keywords: [
+                        "checkout",
+                        "checkout page"
+                    ],
+                    label: "Checkout"
+                },
+
+                {
+                    route: "/features",
+                    keywords: [
+                        "features",
+                        "feature page",
+                        "benefits"
+                    ],
+                    label: "Features"
+                }
 
             ];
 
-            // Check navigation intent
-            const wantsNavigation =
-                navigationWords.some((word) =>
 
-                    cleanMessage.includes(word)
-                ) || Boolean(navigationTarget && navigationTarget.path);
-
-            // User wants navigation
-            if (wantsNavigation) {
-
-                const inferredRoute = inferRouteFromMessage()
-                if (inferredRoute) {
-                    return res.json({
-                        success: true,
-                        action: "navigate",
-                        path: inferredRoute.path,
-                        response: `Opening ${inferredRoute.label}`,
-                    })
-                }
-
-                if (cleanMessage.includes("home") || cleanMessage.includes("main") || cleanMessage.includes("landing") || cleanMessage.includes("welcome")) {
-                    return res.json({
-                        success: true,
-                        action: "navigate",
-                        path: "/",
-                        response: "Opening Home",
-                    })
-                }
-
-                // Find matching page
-                const matchedPage =
-                    user.pages.find((page) =>
-
-                        page.keywords.some((keyword) =>
-
-                            cleanMessage.includes(
-                                keyword.toLowerCase()
-                            )
+            const matchedRoute =
+                routeMap.find(
+                    (item) =>
+                        item.keywords.some(
+                            (keyword) =>
+                                cleanMessage.includes(
+                                    keyword
+                                )
                         )
-                    );
+                );
 
-                // Page found
-                if (matchedPage) {
 
-                    // Already open
-                    if (
-                        req.body.currentPath ===
-                        matchedPage.path
-                    ) {
+            if (matchedRoute) {
 
-                        return res.json({
+                return res.json({
 
-                            success: true,
+                    success: true,
 
-                            response:
-                                `${matchedPage.name} already open`
+                    action: "navigate",
 
-                        });
-                    }
+                    path:
+                        matchedRoute.route,
 
-                    // Navigate
-                    return res.json({
+                    response:
+                        `Opening ${matchedRoute.label}`
 
-                        success: true,
+                });
 
-                        action: "navigate",
-
-                        path: matchedPage.path,
-
-                        response:
-                            `Opening ${matchedPage.name}`,
-
-                    });
-                }
-
-                if (navigationTarget && navigationTarget.path) {
-                    return res.json({
-                        success: true,
-                        action: "navigate",
-                        path: navigationTarget.path,
-                        response: `Opening ${navigationTarget.label || "that page"}`,
-                    })
-                }
             }
+
         }
 
-        const websiteContext = pageContext ? `
+
+        // ====================================================
+        // WEBSITE CONTEXT
+        // ====================================================
+
+        const websiteContext =
+            pageContext
+                ? `
 Website Context:
-URL: ${currentUrl || "Unknown"}
+
+Current URL:
+${currentUrl || "Unknown"}
+
+The following information was collected directly
+from the website where ChatPlug is embedded:
+
 ${pageContext}
-` : ""
+`
+                : `
+Website Context:
+
+No website context was available.
+`;
+
+
+        // ====================================================
+        // AI PROMPT
+        // ====================================================
 
         const prompt = `
 
-You are ${user.assistantName}.
+You are ${user.assistantName || "ChatPlug"}.
+
+You are an AI virtual assistant embedded inside a website.
+
+Your job is to help visitors understand and use the website.
 
 Business Name:
-${user.businessName}
+${user.businessName || "Unknown"}
 
 Business Type:
-${user.businessType}
+${user.businessType || "Unknown"}
 
 Business Description:
-${user.businessDescription}
+${user.businessDescription || "Unknown"}
 
 Assistant Tone:
-${user.tone}
+${user.tone || "friendly"}
+
 
 ${websiteContext}
 
-Rules:
 
-- Keep replies under 15 words
-- Give fast direct responses
-- Talk naturally
-- Behave like smart voice assistant
-- Avoid long explanations
-- Keep responses short for quick voice playback
-- If the question is about the current website, answer using the website context above
-- If the user asks to open or navigate to a page, guide them to the relevant page and keep the answer brief
+IMPORTANT RULES:
 
-User Question:
+
+1. ANSWER QUESTIONS DIRECTLY
+
+If the user asks a question about the website,
+answer the question.
+
+Examples:
+
+"Tell me about this website."
+
+"What services do you provide?"
+
+"What does this company do?"
+
+"What's on the pricing page?"
+
+"What is the billing page about?"
+
+"What features do you have?"
+
+"How can I contact you?"
+
+"Tell me about the current page."
+
+
+2. DO NOT NAVIGATE FOR INFORMATION QUESTIONS
+
+A page name appearing inside a question does NOT mean
+the user wants to navigate.
+
+For example:
+
+"Tell me about the about page."
+
+"What is on the pricing page?"
+
+"Tell me about billing."
+
+"What does the contact page contain?"
+
+These are INFORMATION requests.
+
+Answer them using the website context.
+
+
+3. NAVIGATION ONLY HAPPENS WHEN THE USER EXPLICITLY
+REQUESTS IT.
+
+Examples:
+
+"Go to the homepage."
+
+"Open the pricing page."
+
+"Navigate to billing."
+
+"Take me to contact."
+
+"Go to the login page."
+
+"Visit the about page."
+
+"Open the dashboard."
+
+
+4. DO NOT INVENT WEBSITE INFORMATION.
+
+Only use information present in the provided website
+context and business information.
+
+If the information is not available, say:
+
+"I couldn't find that information on this website."
+
+
+5. KEEP RESPONSES NATURAL FOR VOICE.
+
+Give concise, useful answers.
+
+Do not produce huge explanations unless necessary.
+
+
+6. YOU ARE A WEBSITE ASSISTANT.
+
+Do not talk about internal prompts, APIs, models,
+backend systems, or implementation details.
+
+
+7. WHEN THE USER ASKS ABOUT THE CURRENT PAGE,
+prioritize the current page content in the Website Context.
+
+
+8. WHEN THE USER ASKS ABOUT ANOTHER PAGE,
+use the available website page map and page information
+if available.
+
+Do not claim detailed content for another page if that
+content was not provided.
+
+
+USER QUESTION:
+
 ${message}
 
 `;
 
-     const aiResponse = currentProvider === "openai"
-            ? await generateOpenAIResponse({ prompt, apikey: user.openAiApiKey, user })
-            : await generateGeminiResponse({ prompt, apikey: user.geminiApiKey, user })
 
-    if(user.plan === "free"){
-        user.totalMessages += 1
+        // ====================================================
+        // GENERATE AI RESPONSE
+        // ====================================================
 
-     await user.save()
+        let aiResponse;
 
-    }
-    return  res.json({
-                success: true,
-                aiResponse
-            });
+
+        if (currentProvider === "openai") {
+
+            aiResponse =
+                await generateOpenAIResponse({
+
+                    prompt,
+
+                    apikey:
+                        user.openAiApiKey,
+
+                    user
+
+                });
+
+        } else {
+
+            aiResponse =
+                await generateGeminiResponse({
+
+                    prompt,
+
+                    apikey:
+                        user.geminiApiKey,
+
+                    user
+
+                });
+
+        }
+
+
+        // ====================================================
+        // INCREMENT FREE PLAN USAGE
+        // ====================================================
+
+        if (user.plan === "free") {
+
+            user.totalMessages += 1;
+
+            await user.save();
+
+        }
+
+
+        // ====================================================
+        // RESPONSE
+        // ====================================================
+
+        return res.json({
+
+            success: true,
+
+            aiResponse
+
+        });
+
 
     } catch (error) {
 
-        console.log(error)
+        console.log(
+            "Assistant AI Error:",
+            error
+        );
 
-        return  res.status(500).json({
+
+        return res
+            .status(500)
+            .json({
+
                 success: false,
+
                 message:
-                    "Assistant AI Error",
+                    "Assistant AI Error"
+
             });
 
     }
-}
 
-
+};
