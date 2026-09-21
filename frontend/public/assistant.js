@@ -1,9 +1,11 @@
 (function () {
 
+    const embedScript = document.currentScript
+    const startAssistant = () => {
 
     // userData
 
-    const script = document.currentScript;
+    const script = embedScript;
 
     const userId = script?.dataset?.userId
     const BACKEND_URL = "https://ai-virtual-assistant-backend-mqd6.onrender.com"
@@ -544,4 +546,11 @@
     }
 
 
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", startAssistant, { once: true })
+    } else {
+        startAssistant()
+    }
 })();
