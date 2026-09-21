@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FiCopy, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { CLIENT_URL, ServerUrl } from '../App';
 import toast from 'react-hot-toast';
@@ -37,7 +37,21 @@ function Builder({ user, setUser }) {
   const [theme, setTheme] = useState(user?.theme || "dark")
   const [tone, setTone] = useState(user?.tone || "friendly")
 
+  useEffect(() => {
+    if (user?.theme) setTheme(user.theme)
+    if (user?.tone) setTone(user.tone)
+  }, [user?.theme, user?.tone])
+
+  const handleThemeChange = (nextTheme) => {
+    setTheme(nextTheme)
+    setUser((prev) => prev ? { ...prev, theme: nextTheme } : prev)
+  }
+
+  const [provider, setProvider] = useState(user?.provider || "gemini")
+
   const [geminiApiKey, setGeminiApiKey] = useState(user?.geminiApiKey || "")
+
+  const [openAiApiKey, setOpenAiApiKey] = useState(user?.openAiApiKey || "")
 
   const [pages, setPages] = useState(user?.pages || []);
 
@@ -48,6 +62,7 @@ function Builder({ user, setUser }) {
   const [pageKeywords, setPageKeywords] = useState("");
 
   const [loading, setLoading] = useState(false)
+
 
   const addPage = () => {
     if (!pageName || !pagePath) return;
@@ -63,8 +78,8 @@ function Builder({ user, setUser }) {
     setPageName("")
     setPagePath("")
     setPageKeywords("")
-
   }
+
 
   const removePage = (index) => {
     const updatePages = pages.filter((_, i) => i !== index)
@@ -75,6 +90,7 @@ function Builder({ user, setUser }) {
 
   const saveAssistant = async () => {
     setLoading(true)
+
     try {
       const data = {
         assistantName,
@@ -83,23 +99,32 @@ function Builder({ user, setUser }) {
         businessDescription,
         tone,
         theme,
+        provider,
         geminiApiKey,
+        openAiApiKey,
         pages,
       }
 
-      const res = await axios.post(ServerUrl + "/api/user/save-assistant", data, { withCredentials: true })
+      const res = await axios.post(
+        ServerUrl + "/api/user/save-assistant",
+        data,
+        { withCredentials: true }
+      )
+
       console.log(res.data)
       setUser(res.data.user)
+      setTheme(res.data.user.theme || theme)
       setEditAssistant(false)
       toast.success("Assistant Saved Successfully")
       setLoading(false)
+
     } catch (error) {
       toast.error("Failed to save assistant")
       console.log(error)
       setLoading(false)
     }
-
   }
+
 
   const remainingMessages =
     Math.max(
@@ -107,6 +132,7 @@ function Builder({ user, setUser }) {
       (user?.requestLimit || 0) -
       (user?.totalMessages || 0)
     );
+
 
   const remainingDays =
     user?.proExpiresAt
@@ -124,83 +150,157 @@ function Builder({ user, setUser }) {
       : 0;
 
 
+  const embedCode =
+    `<script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}"></script>`;
 
-  const embedCode = `<script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}"></script>`;
 
   return (
-    <div className='min-h-screen brand-surface px-4 py-8'>
+    <div className='min-h-screen bg-[#F7F4EE] px-4 py-8'>
+
       <div className='max-w-4xl mx-auto'>
+
+        {/* HEADER */}
+
         <div className='mb-8'>
-          <h2 className='text-3xl font-bold text-slate-900'>
+
+          <h2 className='text-3xl font-bold text-[#292722]'>
             Assistant Builder
           </h2>
-          <p className='text-slate-500 mt-1'> Customize your virtual
-            assistant</p>
+
+          <p className='text-[#746F67] mt-1'>
+            Customize your virtual assistant
+          </p>
+
         </div>
 
-        {user.isSetupComplete && !editAssistant && (
-          <Card className="p-6 mb-6">
 
-            <p className="text-sm text-slate-400">
+        {/* EXISTING ASSISTANT */}
+
+        {user.isSetupComplete && !editAssistant && (
+
+          <Card className="
+            p-6 mb-6
+            bg-[#FFFCF7]
+            border-[#DDD7CE]
+            shadow-[0_8px_25px_rgba(72,58,45,0.05)]
+          ">
+
+            <p className="text-sm text-[#918A80]">
               Assistant
             </p>
 
-            <h2 className="text-3xl font-bold text-slate-900 mt-1">
+            <h2 className="text-3xl font-bold text-[#292722] mt-1">
               {user.assistantName}
             </h2>
 
-            <p className="text-slate-500 mt-3 leading-7">
+            <p className="text-[#746F67] mt-3 leading-7">
               Your assistant is ready
               to use on your website.
             </p>
 
+
+            {/* STATS */}
+
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6'>
 
-              <div className='rounded-2xl border border-slate-100 bg-slate-50 p-4'>
-                <p className='text-sm text-slate-400'>Current Plan</p>
-                <h2 className='text-xl font-bold text-slate-900 mt-1 capitalize'>{user?.plan}</h2>
+              <div className='rounded-2xl border border-[#E2DCD3] bg-[#F5F1EA] p-4'>
+
+                <p className='text-sm text-[#918A80]'>
+                  Current Plan
+                </p>
+
+                <h2 className='text-xl font-bold text-[#292722] mt-1 capitalize'>
+                  {user?.plan}
+                </h2>
+
               </div>
 
-              <div className='rounded-2xl border border-slate-100 bg-slate-50 p-4'>
-                <p className='text-sm text-slate-400'>Gemini Status</p>
-                <h2 className={`text-xl font-bold mt-1 capitalize ${user?.geminiStatus === "active"
-                  ? "text-emerald-600"
-                  : user?.geminiStatus === "invalid"
-                    ? "text-red-500"
-                    : "text-amber-500"
-                  }`}>{user?.geminiStatus}</h2>
+
+              <div className='rounded-2xl border border-[#E2DCD3] bg-[#F5F1EA] p-4'>
+
+                <p className='text-sm text-[#918A80]'>
+                  Gemini Status
+                </p>
+
+                <h2
+                  className={`text-xl font-bold mt-1 capitalize ${
+                    user?.geminiStatus === "active"
+                      ? "text-[#5B8C65]"
+                      : user?.geminiStatus === "invalid"
+                        ? "text-[#C85D3F]"
+                        : "text-[#B77A32]"
+                  }`}
+                >
+                  {user?.geminiStatus}
+                </h2>
+
               </div>
 
-              <div className='rounded-2xl border border-slate-100 bg-slate-50 p-4'>
-                <p className='text-sm text-slate-400'>{user?.plan === "free"
-                  ? "Messages Left"
-                  : "Plan Expiry"}</p>
-                <h2 className='text-xl font-bold text-slate-900 mt-1 capitalize'>{user?.plan === "free"
-                  ? remainingMessages
-                  : `${remainingDays} Days`}</h2>
+
+              <div className='rounded-2xl border border-[#E2DCD3] bg-[#F5F1EA] p-4'>
+
+                <p className='text-sm text-[#918A80]'>
+
+                  {user?.plan === "free"
+                    ? "Messages Left"
+                    : "Plan Expiry"}
+
+                </p>
+
+                <h2 className='text-xl font-bold text-[#292722] mt-1 capitalize'>
+
+                  {user?.plan === "free"
+                    ? remainingMessages
+                    : `${remainingDays} Days`}
+
+                </h2>
+
               </div>
+
             </div>
+
+
+            {/* EMBED INFORMATION */}
 
             <div className='mt-7'>
 
-              <div className='mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4'>
-                <p className='text-sm font-semibold text-amber-900'>
+              <div className='mt-4 rounded-2xl bg-[#F8EDE7] border border-[#E5C9BC] p-4'>
+
+                <p className='text-sm font-semibold text-[#6B3D2D]'>
                   Where to paste this script?
                 </p>
-                <p className='text-sm text-amber-700 mt-2 leading-6'>
+
+                <p className='text-sm text-[#8C5945] mt-2 leading-6'>
+
                   Paste this script before the closing
                   {" "}
+
                   <span className="font-semibold">
                     {"</body>"}
                   </span>
+
                   {" "}
                   tag of your website HTML file.
+
                   <br />
                   <br />
+
                   Example:
+
                 </p>
 
-                <pre className='mt-3 bg-[#0b0f1e] text-indigo-300 rounded-xl p-3 text-xs font-mono overflow-x-auto'>
+
+                <pre className='
+                  mt-3
+                  bg-[#292722]
+                  text-[#E6A27C]
+                  rounded-xl
+                  p-3
+                  text-xs
+                  font-mono
+                  overflow-x-auto
+                '>
+
                   {`<body>
 
   Your Website Content
@@ -208,189 +308,549 @@ function Builder({ user, setUser }) {
   <script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}"></script>
 
 </body>`}
+
                 </pre>
+
               </div>
 
-              <p className='text-sm font-medium text-slate-900 mb-3 mt-3'>Embed Code</p>
+              <p className='text-sm font-medium text-[#292722] mb-3 mt-3'>
+                Embed Code
+              </p>
+
             </div>
+
 
             <div className='relative'>
-              <textarea readOnly value={embedCode} className='w-full h-20 bg-[#0b0f1e] text-indigo-300 rounded-2xl p-4 text-sm font-mono resize-none outline-none' />
-              <button onClick={() => {
-                navigator.clipboard.writeText(embedCode);
-                toast.success("Copied")
-              }} className='absolute top-4 right-4 w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer'><FiCopy /></button>
+
+              <textarea
+                readOnly
+                value={embedCode}
+                className='
+                  w-full
+                  h-20
+                  bg-[#292722]
+                  text-[#E6A27C]
+                  rounded-2xl
+                  p-4
+                  text-sm
+                  font-mono
+                  resize-none
+                  outline-none
+                '
+              />
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(embedCode);
+                  toast.success("Copied")
+                }}
+                className='
+                  absolute
+                  top-4
+                  right-4
+                  w-10
+                  h-10
+                  rounded-xl
+                  bg-[#FFFCF7]
+                  shadow-sm
+                  border
+                  border-[#DDD7CE]
+                  flex
+                  items-center
+                  justify-center
+                  text-[#655F56]
+                  hover:bg-[#F5F1EA]
+                  transition-colors
+                  cursor-pointer
+                '
+              >
+                <FiCopy />
+              </button>
+
             </div>
 
-            <Button onClick={() => setEditAssistant(true)} className="mt-6">Edit Assistant</Button>
+
+            <Button
+              onClick={() => setEditAssistant(true)}
+              className="
+                mt-6
+                bg-[#292722]
+                hover:bg-[#3A3731]
+                text-white
+              "
+            >
+              Edit Assistant
+            </Button>
 
           </Card>
-
-
         )}
 
-        {editAssistant && <div className='space-y-6'>
 
-          <Card className="p-6">
-            <h2 className='text-lg font-semibold mb-5 text-slate-900'>Basic Information</h2>
+        {/* EDIT ASSISTANT */}
 
-            <div className='space-y-4'>
-              <Input type="text"
-                onChange={(e) => setAssistantName(e.target.value)}
-                value={assistantName}
-                placeholder="Assistant Name" />
+        {editAssistant && (
 
-              <Input type="text"
-                onChange={(e) => setBusinessName(e.target.value)}
-                value={businessName}
-                placeholder="Business Name" />
+          <div className='space-y-6'>
 
-              <Input type="text"
-                onChange={(e) => setBusinessType(e.target.value)}
-                value={businessType}
-                placeholder="Business Type" />
 
-              <Textarea
-                rows={4}
-                onChange={(e) => setBusinessDescription(e.target.value)}
-                value={businessDescription}
-                placeholder="Business Description" />
+            {/* BASIC INFORMATION */}
 
-            </div>
-          </Card>
+            <Card className="
+              p-6
+              bg-[#FFFCF7]
+              border-[#DDD7CE]
+              shadow-[0_8px_25px_rgba(72,58,45,0.05)]
+            ">
 
-          <Card className="p-6">
-            <h2 className='text-lg font-semibold mb-5 text-slate-900'>
-              Appearance
-            </h2>
+              <h2 className='text-lg font-semibold mb-5 text-[#292722]'>
+                Basic Information
+              </h2>
 
-            <div>
-              <Label>Theme</Label>
+              <div className='space-y-4'>
 
-              <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
-                {THEMES.map((item) => (
-                  <button key={item}
-                    onClick={() => setTheme(item)}
-                    className={`py-3 rounded-2xl border-2 capitalize text-sm font-medium transition-colors cursor-pointer ${theme === item
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                      : "border-slate-200 text-slate-600 hover:border-indigo-200"
-                      }`}>{item}
-                  </button>
-                ))}
+                <Input
+                  type="text"
+                  onChange={(e) => setAssistantName(e.target.value)}
+                  value={assistantName}
+                  placeholder="Assistant Name"
+                />
+
+                <Input
+                  type="text"
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  value={businessName}
+                  placeholder="Business Name"
+                />
+
+                <Input
+                  type="text"
+                  onChange={(e) => setBusinessType(e.target.value)}
+                  value={businessType}
+                  placeholder="Business Type"
+                />
+
+                <Textarea
+                  rows={4}
+                  onChange={(e) => setBusinessDescription(e.target.value)}
+                  value={businessDescription}
+                  placeholder="Business Description"
+                />
+
               </div>
-            </div>
+
+            </Card>
 
 
-            <div className='mt-6'>
-              <Label>Assistant Tone</Label>
+            {/* APPEARANCE */}
 
-              <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
-                {TONES.map((item) => (
-                  <button key={item}
-                    onClick={() => setTone(item)}
-                    className={`py-3 rounded-2xl border-2 capitalize text-sm font-medium transition-colors cursor-pointer ${tone === item
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                      : "border-slate-200 text-slate-600 hover:border-indigo-200"
-                      }`}>{item}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Card className="
+              p-6
+              bg-[#FFFCF7]
+              border-[#DDD7CE]
+              shadow-[0_8px_25px_rgba(72,58,45,0.05)]
+            ">
 
-          </Card>
+              <h2 className='text-lg font-semibold mb-5 text-[#292722]'>
+                Appearance
+              </h2>
 
 
-          <Card className="p-6">
-            <div className='flex items-center justify-between mb-5 gap-4 flex-wrap'>
               <div>
-                <h2 className='text-lg font-semibold text-slate-900'>
-                  Gemini API KEY
-                </h2>
-                <p className='text-sm text-slate-400 mt-1'>
-                  Add your Gemini API key to power your assistant
-                </p>
+
+                <Label className="text-[#655F56]">
+                  Theme
+                </Label>
+
+                <div className='grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2'>
+
+                  {THEMES.map((item) => (
+
+                    <button
+                      key={item}
+                      onClick={() => handleThemeChange(item)}
+                      className={`
+                        py-3
+                        rounded-2xl
+                        border-2
+                        capitalize
+                        text-sm
+                        font-medium
+                        transition-colors
+                        cursor-pointer
+
+                        ${
+                          theme === item
+                            ? "border-[#D97757] bg-[#F8EDE7] text-[#C85D3F]"
+                            : "border-[#DDD7CE] text-[#655F56] hover:border-[#D8B7A8]"
+                        }
+                      `}
+                    >
+                      {item}
+                    </button>
+
+                  ))}
+
+                </div>
+
               </div>
 
-              <Button as="a" href="https://aistudio.google.com/app/apikey"
-                target='_blank'
-                rel='noopener noreferrer'
-                size="sm">
-                Get API KEY
-              </Button>
-            </div>
 
-            <Input type="password"
-              placeholder="AIza..."
-              onChange={(e) => setGeminiApiKey(e.target.value)}
-              value={geminiApiKey} />
+              <div className='mt-6'>
 
-            <p className='text-xs text-slate-400 mt-3 leading-6'>
-              Your API key is securely stored and only used for generating AI responses.
-            </p>
-          </Card>
+                <Label className="text-[#655F56]">
+                  Assistant Tone
+                </Label>
 
-          <Card className="p-6">
-            <div className='flex items-center justify-between mb-5 flex-wrap gap-3'>
-              <div>
-                <h2 className='text-lg font-semibold text-slate-900'>Navigation Pages</h2>
-                <p className='text-sm text-slate-400'>
-                  Assistant can redirect users
-                </p>
+                <div className='grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2'>
+
+                  {TONES.map((item) => (
+
+                    <button
+                      key={item}
+                      onClick={() => setTone(item)}
+                      className={`
+                        py-3
+                        rounded-2xl
+                        border-2
+                        capitalize
+                        text-sm
+                        font-medium
+                        transition-colors
+                        cursor-pointer
+
+                        ${
+                          tone === item
+                            ? "border-[#D97757] bg-[#F8EDE7] text-[#C85D3F]"
+                            : "border-[#DDD7CE] text-[#655F56] hover:border-[#D8B7A8]"
+                        }
+                      `}
+                    >
+                      {item}
+                    </button>
+
+                  ))}
+
+                </div>
+
               </div>
 
-              <Button onClick={addPage} size="sm">
-                <FiPlus />Add
-              </Button>
-            </div>
+            </Card>
 
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-              <Input type="text" placeholder='Page Name'
-                onChange={(e) => setPageName(e.target.value)}
-                value={pageName} />
 
-              <Input type="text" placeholder='/pricing'
-                onChange={(e) => setPagePath(e.target.value)}
-                value={pagePath} />
+            {/* AI PROVIDER */}
 
-              <Input type="text" placeholder='Pricing  Plan'
-                onChange={(e) => setPageKeywords(e.target.value)}
-                value={pageKeywords} />
-            </div>
+            <Card className="
+              p-6
+              bg-[#FFFCF7]
+              border-[#DDD7CE]
+              shadow-[0_8px_25px_rgba(72,58,45,0.05)]
+            ">
 
-            <div className='mt-5 space-y-3'>
-              {
-                pages.map((page, index) => (
-                  <div key={index}
-                    className='flex items-center justify-between border border-slate-100 rounded-2xl p-4 bg-slate-50'>
+              <div className='flex items-center justify-between mb-5 gap-4 flex-wrap'>
+
+                <div>
+
+                  <h2 className='text-lg font-semibold text-[#292722]'>
+                    AI Provider
+                  </h2>
+
+                  <p className='text-sm text-[#918A80] mt-1'>
+                    Choose which AI service powers your assistant
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className='grid grid-cols-2 gap-3 mb-5'>
+
+                <button
+                  type="button"
+                  onClick={() => setProvider("gemini")}
+                  className={`
+                    py-3
+                    rounded-2xl
+                    border-2
+                    capitalize
+                    text-sm
+                    font-medium
+                    transition-colors
+                    cursor-pointer
+
+                    ${
+                      provider === "gemini"
+                        ? "border-[#D97757] bg-[#F8EDE7] text-[#C85D3F]"
+                        : "border-[#DDD7CE] text-[#655F56] hover:border-[#D8B7A8]"
+                    }
+                  `}
+                >
+                  Gemini
+                </button>
+
+
+                <button
+                  type="button"
+                  onClick={() => setProvider("openai")}
+                  className={`
+                    py-3
+                    rounded-2xl
+                    border-2
+                    capitalize
+                    text-sm
+                    font-medium
+                    transition-colors
+                    cursor-pointer
+
+                    ${
+                      provider === "openai"
+                        ? "border-[#D97757] bg-[#F8EDE7] text-[#C85D3F]"
+                        : "border-[#DDD7CE] text-[#655F56] hover:border-[#D8B7A8]"
+                    }
+                  `}
+                >
+                  OpenAI
+                </button>
+
+              </div>
+
+
+              {provider === "gemini" ? (
+
+                <>
+
+                  <div className='flex items-center justify-between mb-3 gap-4 flex-wrap'>
+
+                    <h3 className='text-md font-semibold text-[#292722]'>
+                      Gemini API KEY
+                    </h3>
+
+                    <Button
+                      as="a"
+                      href="https://aistudio.google.com/app/apikey"
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      size="sm"
+                      className="
+                        bg-[#D97757]
+                        hover:bg-[#C96442]
+                        text-white
+                      "
+                    >
+                      Get API KEY
+                    </Button>
+
+                  </div>
+
+                  <Input
+                    type="password"
+                    placeholder="AIza..."
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    value={geminiApiKey}
+                  />
+
+                </>
+
+              ) : (
+
+                <>
+
+                  <div className='flex items-center justify-between mb-3 gap-4 flex-wrap'>
+
+                    <h3 className='text-md font-semibold text-[#292722]'>
+                      OpenAI API KEY
+                    </h3>
+
+                    <Button
+                      as="a"
+                      href="https://platform.openai.com/api-keys"
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      size="sm"
+                      className="
+                        bg-[#D97757]
+                        hover:bg-[#C96442]
+                        text-white
+                      "
+                    >
+                      Get API KEY
+                    </Button>
+
+                  </div>
+
+                  <Input
+                    type="password"
+                    placeholder="sk-..."
+                    onChange={(e) => setOpenAiApiKey(e.target.value)}
+                    value={openAiApiKey}
+                  />
+
+                </>
+
+              )}
+
+
+              <p className='text-xs text-[#918A80] mt-3 leading-6'>
+                Your API key is securely stored and only used for generating AI responses.
+              </p>
+
+            </Card>
+
+
+            {/* NAVIGATION PAGES */}
+
+            <Card className="
+              p-6
+              bg-[#FFFCF7]
+              border-[#DDD7CE]
+              shadow-[0_8px_25px_rgba(72,58,45,0.05)]
+            ">
+
+              <div className='flex items-center justify-between mb-5 flex-wrap gap-3'>
+
+                <div>
+
+                  <h2 className='text-lg font-semibold text-[#292722]'>
+                    Navigation Pages
+                  </h2>
+
+                  <p className='text-sm text-[#918A80]'>
+                    Assistant can redirect users
+                  </p>
+
+                </div>
+
+
+                <Button
+                  onClick={addPage}
+                  size="sm"
+                  className="
+                    bg-[#292722]
+                    hover:bg-[#3A3731]
+                    text-white
+                  "
+                >
+                  <FiPlus />
+                  Add
+                </Button>
+
+              </div>
+
+
+              <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+
+                <Input
+                  type="text"
+                  placeholder='Page Name'
+                  onChange={(e) => setPageName(e.target.value)}
+                  value={pageName}
+                />
+
+                <Input
+                  type="text"
+                  placeholder='/pricing'
+                  onChange={(e) => setPagePath(e.target.value)}
+                  value={pagePath}
+                />
+
+                <Input
+                  type="text"
+                  placeholder='Pricing  Plan'
+                  onChange={(e) => setPageKeywords(e.target.value)}
+                  value={pageKeywords}
+                />
+
+              </div>
+
+
+              <div className='mt-5 space-y-3'>
+
+                {pages.map((page, index) => (
+
+                  <div
+                    key={index}
+                    className='
+                      flex
+                      items-center
+                      justify-between
+                      border
+                      border-[#E2DCD3]
+                      rounded-2xl
+                      p-4
+                      bg-[#F5F1EA]
+                    '
+                  >
 
                     <div>
-                      <p className='font-medium text-slate-800'>{page.name}</p>
-                      <p className='text-sm text-slate-400'>{page.path}</p>
+
+                      <p className='font-medium text-[#34312C]'>
+                        {page.name}
+                      </p>
+
+                      <p className='text-sm text-[#918A80]'>
+                        {page.path}
+                      </p>
+
                     </div>
-                    <button onClick={() => removePage(index)} className='text-red-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer'>
+
+
+                    <button
+                      onClick={() => removePage(index)}
+                      className='
+                        text-[#C85D3F]
+                        hover:text-[#A94731]
+                        p-2
+                        rounded-lg
+                        hover:bg-[#F3E4DD]
+                        transition-colors
+                        cursor-pointer
+                      '
+                    >
                       <FiTrash2 />
                     </button>
+
                   </div>
-                ))
+
+                ))}
+
+              </div>
+
+            </Card>
+
+
+            {/* SAVE */}
+
+            <Button
+              onClick={saveAssistant}
+              disabled={
+                loading ||
+                !assistantName ||
+                !businessName ||
+                !businessType ||
+                !businessDescription ||
+                !(provider === "gemini"
+                  ? geminiApiKey
+                  : openAiApiKey)
               }
-            </div>
-          </Card>
+              size="lg"
+              className="
+                w-full
+                bg-[#292722]
+                hover:bg-[#3A3731]
+                text-white
+              "
+            >
+              {
+                loading
+                  ? "Saving..."
+                  : user.isSetupComplete
+                    ? "Update Assistant"
+                    : "Save Assistant"
+              }
+            </Button>
 
-          <Button onClick={saveAssistant}
-            disabled={loading ||
-              !assistantName ||
-              !businessName ||
-              !businessType ||
-              !businessDescription ||
-              !geminiApiKey}
-            size="lg"
-            className="w-full">
-            {
-              loading ? "Saving..." : user.isSetupComplete ? "Update Assistant" : "Save Assistant"
-            }
-          </Button>
-
-        </div>}
+          </div>
+        )}
 
       </div>
 

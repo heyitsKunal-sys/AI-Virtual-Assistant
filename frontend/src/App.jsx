@@ -3,8 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import axios from 'axios'
-import ProtectedRoute from './Components/ProtectedRoute'
-import Navbar from './Components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
+import Navbar from './components/Navbar'
 import Builder from './pages/Builder'
 import Billing from './pages/Billing'
 import { Toaster } from "react-hot-toast"
@@ -43,7 +43,7 @@ function App() {
         <Route path='/*' element={<ProtectedRoute user={user} loading={loading}>
           <Navbar setUser={setUser} user={user}/>
           <Routes>
-            <Route path='/' element={<Home user={user}/>} />
+            <Route path='/' element={<Home user={user} setUser={setUser}/>} />
             <Route path='/builder' element={<Builder user={user} setUser={setUser}/>}/>
             <Route path='/billing' element={<Billing user={user} setUser={setUser}/>}/>
 

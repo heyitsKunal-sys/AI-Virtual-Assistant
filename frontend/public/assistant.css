@@ -1,6 +1,6 @@
 /* toggle btn */
 
-.shifra-btn{
+.chatplug-btn{
   position:fixed;
   right:18px;
   bottom:18px;
@@ -16,7 +16,7 @@
   overflow:hidden;
   transition:.3s;
 }
-.shifra-btn img{
+.chatplug-btn img{
   width:34px;
   height:34px;
   object-fit:contain;
@@ -24,7 +24,7 @@
 
 /* popup */
 
-.shifra-popup{
+.chatplug-popup{
   position:fixed;
   right:18px;
   bottom:98px;
@@ -48,12 +48,12 @@
 }
 
 
-.shifra-overlay{
+.chatplug-overlay{
   position:absolute;
   inset:0;
 }
 
-.shifra-content{
+.chatplug-content{
   position:relative;
   z-index:2;
 
@@ -69,18 +69,37 @@
 }
 
 
-.shifra-top{
+.chatplug-top{
     width:100%;
   display:flex;
   flex-direction:column;
   align-items:center;
 }
 
-.shifra-orb-wrap{
+.chatplug-brand-wrap{
+  width:52px;
+  height:52px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:12px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 10px 30px rgba(0,0,0,0.14);
+}
+
+.chatplug-brand-logo{
+  width:32px;
+  height:32px;
+  object-fit:contain;
+}
+
+.chatplug-orb-wrap{
   position:relative;
   margin-top:2px;
 }
-.shifra-orb-glow{
+.chatplug-orb-glow{
 position:absolute;
   inset:0;
   transform:scale(1.8);
@@ -89,7 +108,7 @@ position:absolute;
   opacity:.6;
 }
 
-.shifra-orb{
+.chatplug-orb{
      position:relative;
   width:118px;
   height:118px;
@@ -112,7 +131,7 @@ position:absolute;
 }
 
 
-.shifra-title{
+.chatplug-title{
   margin-top:14px;
   font-size:28px;
   line-height:1.1;
@@ -120,19 +139,19 @@ position:absolute;
   text-align:center;
 }
 
-.shifra-sub{
+.chatplug-sub{
   margin-top:10px;
   font-size:14px;
   line-height:1.6;
   text-align:center;
 }
-.shifra-status{
+.chatplug-status{
 margin-top:18px;
   font-size:16px;
   font-weight:700;
 }
 
-.shifra-wave{
+.chatplug-wave{
   margin-top:8px;
   display:flex;
   align-items:flex-end;
@@ -142,34 +161,34 @@ margin-top:18px;
   transition:.3s;
 }
 
-.shifra-wave.active{
+.chatplug-wave.active{
     opacity: 1;
 }
 
-.shifra-wave span {
+.chatplug-wave span {
     width:5px;
   border-radius:999px;
   animation:wave 1.2s infinite ease-in-out;
   
 }
 
-.shifra-wave span:nth-child(1){
+.chatplug-wave span:nth-child(1){
     height: 14px;
 }
 
-.shifra-wave span:nth-child(2){
+.chatplug-wave span:nth-child(2){
   height:28px;
 }
 
-.shifra-wave span:nth-child(3){
+.chatplug-wave span:nth-child(3){
   height:16px;
 }
 
-.shifra-wave span:nth-child(4){
+.chatplug-wave span:nth-child(4){
   height:34px;
 }
 
-.shifra-wave span:nth-child(5){
+.chatplug-wave span:nth-child(5){
   height:20px;
 }
 
@@ -190,7 +209,7 @@ margin-top:18px;
   }
 }
 
-.shifra-user-text{
+.chatplug-user-text{
    margin-top:10px;
   min-height:20px;
   font-size:14px;
@@ -199,7 +218,7 @@ margin-top:18px;
   font-weight:600;
 }
 
-.shifra-ai-text{
+.chatplug-ai-text{
   margin-top:2px;
   min-height:18px;
   font-size:13px;
@@ -208,7 +227,7 @@ margin-top:18px;
   opacity:.82;
 }
 
-.shifra-bottom{
+.chatplug-bottom{
    position:relative;
   width:130px;
   height:130px;
@@ -217,7 +236,7 @@ margin-top:18px;
   justify-content:center;
 }
 
-.shifra-mic{
+.chatplug-mic{
   position:relative;
   z-index:2;
 
@@ -241,7 +260,7 @@ margin-top:18px;
   animation:micFloat 2.5s infinite ease-in-out;
 }
 
-.shifra-mic:hover{
+.chatplug-mic:hover{
   
   transform:scale(1.06);
 }
@@ -261,7 +280,7 @@ margin-top:18px;
   }
 }
 
-.shifra-mic-icon{
+.chatplug-mic-icon{
    width:30px;
   height:30px;
   object-fit:contain;
@@ -270,73 +289,74 @@ margin-top:18px;
 
 /* dark theme */
 .theme-dark{
-  background:#050816;
-  border:1px solid rgba(255,255,255,.08);
+  background:#292722;
+  border:1px solid rgba(255,255,255,.10);
 }
 
-.theme-dark .shifra-overlay{
+.theme-dark .chatplug-overlay{
   background:
     radial-gradient(
       circle at top,
-      rgba(168,85,247,.18),
+      rgba(217,119,87,.18),
       transparent 45%
     );
 }
 
-.theme-dark .shifra-orb,
-.theme-dark .shifra-orb-glow{
+.theme-dark .chatplug-orb,
+.theme-dark .chatplug-orb-glow{
   background:
     linear-gradient(
       135deg,
-      #4cc9ff,
-      #7c3aed,
-      #ec4899
+      #F1B49C,
+      #D97757,
+      #A94F36
     );
 }
 
-.theme-dark .shifra-title{
-  color:white;
+.theme-dark .chatplug-title{
+  color:#FFF9F3;
 }
 
-.theme-dark .shifra-sub{
-  color:rgba(255,255,255,.68);
+.theme-dark .chatplug-sub{
+  color:#BEB6AC;
 }
 
-.theme-dark .shifra-status{
-  color:#22e3a6;
+.theme-dark .chatplug-status{
+  color:#D97757;
 }
 
-.theme-dark .shifra-wave span{
-  background:#22e3a6;
+.theme-dark .chatplug-wave span{
+  background:#D97757;
 }
 
-.theme-dark .shifra-user-text{
-  color:white;
+.theme-dark .chatplug-user-text{
+  color:#FFF9F3;
 }
 
-.theme-dark .shifra-ai-text{
-  color:rgba(255,255,255,.72);
+.theme-dark .chatplug-ai-text{
+  color:#BEB6AC;
 }
 
 /* =========================
    DARK THEME BUTTONS
 ========================= */
 
-.theme-dark .shifra-mic,
-.theme-dark.shifra-btn
+.theme-dark .chatplug-mic,
+.theme-dark.chatplug-btn
 {
   background:
     linear-gradient(
       135deg,
-      #7c3aed,
-      #4f8cff
+      #F1B49C,
+      #D97757,
+      #A94F36
     );
 
   /* Large premium glow */
   box-shadow:
-    0 0 35px rgba(124,58,237,.55),
-    0 0 90px rgba(79,140,255,.38),
-    0 0 140px rgba(124,58,237,.22);
+    0 0 35px rgba(217,119,87,.45),
+    0 0 90px rgba(217,119,87,.28),
+    0 0 140px rgba(217,119,87,.18);
 
 }
 
@@ -344,78 +364,73 @@ margin-top:18px;
 /* light theme */
 
 .theme-light{
-  background:
-    linear-gradient(
-      135deg,
-      #ffffff,
-      #eef6ff
-    );
-
-  border:1px solid #dbeafe;
+  background:#FFFCF7;
+  border:1px solid #DDD7CE;
 }
 
-.theme-light .shifra-overlay{
+.theme-light .chatplug-overlay{
   background:
     radial-gradient(
       circle at top,
-      rgba(59,130,246,.12),
+      rgba(217,119,87,.12),
       transparent 45%
     );
 }
 
-.theme-light .shifra-orb,
-.theme-light .shifra-orb-glow{
+.theme-light .chatplug-orb,
+.theme-light .chatplug-orb-glow{
   background:
     linear-gradient(
       135deg,
-      #7dd3fc,
-      #67e8f9,
-      #f5d0fe
+      #F6D2C0,
+      #D97757,
+      #C96442
     );
 }
 
-.theme-light .shifra-title{
-  color:#081028;
+.theme-light .chatplug-title{
+  color:#292722;
 }
 
-.theme-light .shifra-sub{
-  color:#475569;
+.theme-light .chatplug-sub{
+  color:#746F67;
 }
 
-.theme-light .shifra-status{
-  color:#3b82f6;
+.theme-light .chatplug-status{
+  color:#D97757;
 }
 
-.theme-light .shifra-wave span{
-  background:#60a5fa;
+.theme-light .chatplug-wave span{
+  background:#D97757;
 }
 
-.theme-light .shifra-user-text{
-  color:#081028;
+.theme-light .chatplug-user-text{
+  color:#292722;
 }
 
-.theme-light .shifra-ai-text{
-  color:#475569;
+.theme-light .chatplug-ai-text{
+  color:#746F67;
 }
 /* =========================
    LIGHT THEME BUTTONS
 ========================= */
 
-.theme-light .shifra-mic,
-.theme-light.shifra-btn{
+.theme-light .chatplug-mic,
+.theme-light.chatplug-btn{
 
   background:
     linear-gradient(
       135deg,
-      #60a5fa,
-      #06b6d4
+      #F6D2C0,
+      #D97757,
+      #C96442
     );
 
   /* Large soft glow */
   box-shadow:
-    0 0 30px rgba(59,130,246,.38),
-    0 0 85px rgba(6,182,212,.28),
-    0 0 130px rgba(59,130,246,.16);
+    0 0 30px rgba(217,119,87,.32),
+    0 0 85px rgba(217,119,87,.22),
+    0 0 130px rgba(217,119,87,.12);
 
 }
 
@@ -423,78 +438,75 @@ margin-top:18px;
 /* glass theme */
 
 .theme-glass{
-  background:
-    rgba(0,0,0,.28);
-
-  backdrop-filter:blur(45px);
-
-  -webkit-backdrop-filter:blur(45px);
-
-  border:1px solid rgba(255,255,255,.08);
+  background: rgba(57, 53, 47, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border:1px solid rgba(255,255,255,.14);
 }
 
-.theme-glass .shifra-overlay{
+.theme-glass .chatplug-overlay{
   background:
     radial-gradient(
       circle at top,
-      rgba(255,255,255,.05),
-      
+      rgba(227,154,124,.18),
+      transparent 45%
     );
 }
 
-.theme-glass .shifra-orb,
-.theme-glass .shifra-orb-glow{
+.theme-glass .chatplug-orb,
+.theme-glass .chatplug-orb-glow{
   background:
     linear-gradient(
       135deg,
-      #bae6fd,
-      #c4b5fd,
-      #f5d0fe
+      #F8DDD0,
+      #E39A7C,
+      #C85D3F
     );
 }
 
-.theme-glass .shifra-title{
-  color:white;
+.theme-glass .chatplug-title{
+  color:#FFF9F3;
 }
 
-.theme-glass .shifra-sub{
-  color:rgba(255,255,255,.75);
+.theme-glass .chatplug-sub{
+  color:#D5CCC3;
 }
 
-.theme-glass .shifra-status{
-  color:#a5f3fc;
+.theme-glass .chatplug-status{
+  color:#E39A7C;
 }
 
-.theme-glass .shifra-wave span{
-  background:#a5f3fc;
+.theme-glass .chatplug-wave span{
+  background:#E39A7C;
 }
 
-.theme-glass .shifra-user-text{
-  color:white;
+.theme-glass .chatplug-user-text{
+  color:#FFF9F3;
 }
 
-.theme-glass .shifra-ai-text{
-  color:rgba(255,255,255,.72);
+.theme-glass .chatplug-ai-text{
+  color:#D5CCC3;
 }
 /* =========================
    GLASS THEME BUTTONS
 ========================= */
 
-.theme-glass .shifra-mic,
-.theme-glass.shifra-btn{
+.theme-glass .chatplug-mic,
+.theme-glass.chatplug-btn{
 
   background:
     linear-gradient(
       135deg,
-      #38bff8a3,
-      #8a5cf6a8
+      #F8DDD0,
+      #E39A7C,
+      #C85D3F
     );
 
   /* Frosted neon glow */
   box-shadow:
-    0 0 35px rgba(34,211,238,.34),
-    0 0 95px rgba(139,92,246,.28),
-    0 0 150px rgba(56,189,248,.18);
+    0 0 35px rgba(227,154,124,.30),
+    0 0 95px rgba(200,93,63,.22),
+    0 0 150px rgba(227,154,124,.14);
 
 }
 
@@ -502,80 +514,81 @@ margin-top:18px;
 
 
 .theme-neon{
-  background:#03120d;
-  border:1px solid rgba(16,185,129,.18);
+  background:#241B18;
+  border:1px solid rgba(217,119,87,.20);
 }
 
-.theme-neon .shifra-overlay{
+.theme-neon .chatplug-overlay{
   background:
     radial-gradient(
       circle at top,
-      rgba(16,185,129,.18),
+      rgba(240,138,104,.18),
       transparent 45%
     );
 }
 
-.theme-neon .shifra-orb,
-.theme-neon .shifra-orb-glow{
+.theme-neon .chatplug-orb,
+.theme-neon .chatplug-orb-glow{
   background:
     linear-gradient(
       135deg,
-      #34d399,
-      #10b981,
-      #14b8a6
+      #FFD5C3,
+      #E88965,
+      #C85D3F
     );
 }
 
-.theme-neon .shifra-title{
-  color:#ecfdf5;
+.theme-neon .chatplug-title{
+  color:#FFF3EA;
 }
 
-.theme-neon .shifra-sub{
-  color:rgba(209,250,229,.72);
+.theme-neon .chatplug-sub{
+  color:#D9BDB1;
 }
 
-.theme-neon .shifra-status{
-  color:#6ee7b7;
+.theme-neon .chatplug-status{
+  color:#F08A68;
 }
 
-.theme-neon .shifra-wave span{
-  background:#6ee7b7;
+.theme-neon .chatplug-wave span{
+  background:#F08A68;
 }
 
-.theme-neon .shifra-user-text{
-  color:#ecfdf5;
+.theme-neon .chatplug-user-text{
+  color:#FFF3EA;
 }
 
-.theme-neon .shifra-ai-text{
-  color:rgba(209,250,229,.75);
+.theme-neon .chatplug-ai-text{
+  color:#D9BDB1;
 }
 
 /* =========================
    NEON THEME BUTTONS
 ========================= */
 
-.theme-neon .shifra-mic,
-.theme-neon.shifra-btn{
+.theme-neon .chatplug-mic,
+.theme-neon.chatplug-btn{
 
   background:
     linear-gradient(
       135deg,
-      #10b981,
-      #22c55e
+      #FFD5C3,
+      #E88965,
+      #C85D3F
     );
 
   /* Strong neon glow */
   box-shadow:
-    0 0 38px rgba(16,185,129,.45),
-    0 0 100px rgba(34,197,94,.32),
-    0 0 160px rgba(16,185,129,.20);
+    0 0 38px rgba(240,138,104,.38),
+    0 0 100px rgba(200,93,63,.26),
+    0 0 160px rgba(240,138,104,.18);
 
 }
 
 
 
 @media(max-width:640px){
-  .shifra-popup{
+  .chatplug-popup{
     width:340px;
     min-width:340px;
     max-width:340px;
@@ -591,22 +604,22 @@ margin-top:18px;
     border-radius:30px;
   }
 
-  .shifra-btn{
+  .chatplug-btn{
     width:64px;
     height:64px;
     right:14px;
     bottom:14px;
   }
-  .shifra-btn img{
+  .chatplug-btn img{
     width: 30px;
     height: 30px;
   }
 
-   .shifra-title{
+   .chatplug-title{
     font-size:26px;
   }
 
-  .shifra-sub{
+  .chatplug-sub{
     font-size:13px;
   }
 }

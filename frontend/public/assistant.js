@@ -7,7 +7,7 @@
 
     const userId = script?.dataset?.userId
 
-    const theme = "dark"
+    let theme = "dark"
 
     let assistantConfig = null
 
@@ -27,38 +27,42 @@
 
     const popup = document.createElement("div")
 
-    popup.className = `shifra-popup theme-${theme}`
+    popup.className = `chatplug-popup theme-${theme}`
 
     popup.innerHTML = `
-    <div class="shifra-overlay"></div>
+    <div class="chatplug-overlay"></div>
 
-    <div class="shifra-content">
+    <div class="chatplug-content">
 
-       <div class="shifra-top">
-            <div class="shifra-orb-wrap">
+       <div class="chatplug-top">
+            <div class="chatplug-brand-wrap">
+                <img class="chatplug-brand-logo" src="http://localhost:5173/chat-plug-logo.png" alt="ChatPlug logo" />
+            </div>
 
-                <div class="shifra-orb-glow"></div>
+            <div class="chatplug-orb-wrap">
 
-                <div class="shifra-orb"></div>
+                <div class="chatplug-orb-glow"></div>
+
+                <div class="chatplug-orb"></div>
 
             </div>
 
-            <h2 class="shifra-title">
+            <h2 class="chatplug-title">
                 Hello! I'm ChatPlug
             </h2>
 
-            <p class="shifra-sub">
+            <p class="chatplug-sub">
                 Your smart voice assistant.
                 <br />
                 Ask anything about your website.
             </p>
 
 
-            <div class="shifra-status">
+            <div class="chatplug-status">
                 Tap button to Speak
             </div>
 
-            <div class="shifra-wave">
+            <div class="chatplug-wave">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -68,24 +72,24 @@
             </div>
 
             <!-- User Text -->
-            <div class="shifra-user-text">
+            <div class="chatplug-user-text">
             </div>
 
             <!-- AI Text -->
-            <div class="shifra-ai-text">
+            <div class="chatplug-ai-text">
             </div>
   
         </div>
 
 
-        <div class="shifra-bottom">
+        <div class="chatplug-bottom">
             
-            <button class="shifra-mic">
+            <button class="chatplug-mic">
 
                <img 
                src="http://localhost:5173/mic.svg"
                alt="mic"
-               class="shifra-mic-icon"/>
+               class="chatplug-mic-icon"/>
             </button>
         </div>
     </div>
@@ -98,12 +102,12 @@
 
     const button = document.createElement("button")
 
-    button.className = `shifra-btn theme-${theme}`
+    button.className = `chatplug-btn theme-${theme}`
 
     button.innerHTML = `
     <img 
-    src="http://localhost:5173/logo.png"
-    alt="logo"
+    src="http://localhost:5173/chat-plug-logo.png"
+    alt="ChatPlug logo"
     />`;
     document.body.appendChild(button)
 
@@ -121,6 +125,186 @@
 
 
     // load Assistant
+
+    const buildPageContext = () => {
+        const headings = [...document.querySelectorAll("h1, h2, h3, h4")]
+            .map((heading) => (heading.textContent || "").trim())
+            .filter(Boolean)
+            .slice(0, 30)
+
+        const links = [...document.querySelectorAll("a[href]")]
+            .map((link) => {
+                const href = link.getAttribute("href")
+                const label = (link.textContent || link.getAttribute("aria-label") || "").trim()
+
+                if (!href || !label || href.startsWith("#")) return null
+
+                const absoluteHref = href.startsWith("http")
+                    ? href
+                    : new URL(href, window.location.origin).href
+
+                return {
+                    label,
+                    href: absoluteHref,
+                }
+            })
+            .filter(Boolean)
+            .slice(0, 80)
+
+        const plainText = (document.body?.innerText || "").replace(/\s+/g, " ").trim()
+
+        return {
+            title: document.title || "",
+            URL: window.location.href,
+            pathname: window.location.pathname,
+            titleWords: (document.title || "").toLowerCase(),
+            headings,
+            text: plainText.slice(0, 8000),
+            links,
+            navLinks: links.filter((link) => {
+                const text = link.label.toLowerCase()
+                return /home|about|pricing|contact|login|signup|faq|services|blog|settings|privacy|dashboard|profile|billing/.test(text)
+            }).slice(0, 20),
+        }
+    }
+
+    const navigationAliases = {
+        home: ["home", "main", "landing", "start", "welcome", "home page", "main page", "landing page"],
+        about: ["about", "about us", "company", "our story", "who we are"],
+        contact: ["contact", "contact us", "reach us", "get in touch", "support", "help", "call us"],
+        pricing: ["pricing", "plans", "plan", "packages", "package", "prices", "cost", "fees", "subscription"],
+        services: ["services", "service", "solutions", "offerings"],
+        blog: ["blog", "articles", "news", "insights", "posts"],
+        faq: ["faq", "questions", "help center", "frequently asked questions"],
+        portfolio: ["portfolio", "projects", "work", "case studies"],
+        login: ["login", "log in", "sign in", "signin", "account", "my account"],
+        signup: ["signup", "register", "create account", "sign up", "join now"],
+        settings: ["settings", "profile settings", "preferences", "account settings"],
+        privacy: ["privacy", "privacy policy", "terms", "terms and conditions"],
+        billing: ["billing", "plans and billing", "payment", "payments", "upgrade", "checkout", "invoice"],
+        dashboard: ["dashboard", "admin dashboard", "user dashboard"],
+        team: ["team", "our team", "people"],
+        testimonials: ["testimonials", "reviews", "feedback", "stories"],
+    }
+
+    const findNavigationMatch = (message) => {
+        const cleanedMessage = message.toLowerCase().trim()
+        if (!cleanedMessage) return null
+
+        const directHome = ["home", "main", "landing", "welcome", "welcome page", "home page", "main page"].some((term) => cleanedMessage.includes(term))
+        if (directHome) {
+            return {
+                label: "Home",
+                href: `${window.location.origin}/`,
+                score: 999,
+            }
+        }
+
+        const aliasTerms = new Set()
+        Object.entries(navigationAliases).forEach(([pageType, aliases]) => {
+            aliases.forEach((alias) => {
+                aliasTerms.add(alias)
+            })
+        })
+
+        const scoreLink = (label, href) => {
+            const normalizedLabel = label.toLowerCase()
+            const combined = `${normalizedLabel} ${href}`.toLowerCase()
+            let score = 0
+
+            if (combined.includes(cleanedMessage)) score += 30
+
+            aliasTerms.forEach((alias) => {
+                if (cleanedMessage.includes(alias) && combined.includes(alias)) {
+                    score += 18
+                }
+            })
+
+            cleanedMessage.split(/\s+/).forEach((word) => {
+                if (!word) return
+                if (combined.includes(word)) score += 2
+            })
+
+            return score
+        }
+
+        const linkCandidates = [...document.querySelectorAll("a[href]")]
+            .map((link) => {
+                const href = link.getAttribute("href")
+                const label = (link.textContent || link.getAttribute("aria-label") || "").trim()
+
+                if (!href || !label || href.startsWith("#")) return null
+
+                const absoluteHref = href.startsWith("http")
+                    ? href
+                    : new URL(href, window.location.origin).href
+
+                const score = scoreLink(label, absoluteHref)
+                if (score > 0) {
+                    return { label, href: absoluteHref, score }
+                }
+
+                return null
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.score - a.score)
+
+        const namedPageRoutes = Object.entries(navigationAliases).map(([pageKey, aliases]) => {
+            const matchedAlias = aliases.find((alias) => cleanedMessage.includes(alias))
+            if (!matchedAlias) return null
+
+            const routeMap = {
+                home: "/",
+                about: "/about",
+                contact: "/contact",
+                pricing: "/pricing",
+                services: "/services",
+                blog: "/blog",
+                faq: "/faq",
+                portfolio: "/portfolio",
+                login: "/login",
+                signup: "/signup",
+                settings: "/settings",
+                privacy: "/privacy",
+                billing: "/billing",
+                dashboard: "/dashboard",
+                team: "/team",
+                testimonials: "/testimonials",
+            }
+
+            return {
+                label: pageKey.charAt(0).toUpperCase() + pageKey.slice(1),
+                href: `${window.location.origin}${routeMap[pageKey] || "/"}`,
+                score: 100,
+            }
+        }).filter(Boolean)
+
+        const headingCandidates = [...document.querySelectorAll("h1, h2, h3")]
+            .map((heading) => {
+                const text = (heading.textContent || "").trim()
+                if (!text) return null
+
+                const anchor = heading.closest("a")
+                const href = anchor?.getAttribute("href")
+                if (!href) return null
+
+                const score = scoreLink(text, href)
+                if (score > 0) {
+                    return {
+                        label: text,
+                        href: href.startsWith("http") ? href : new URL(href, window.location.origin).href,
+                        score,
+                    }
+                }
+
+                return null
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.score - a.score)
+
+        const candidates = [...namedPageRoutes, ...linkCandidates, ...headingCandidates]
+        return candidates.length ? candidates.sort((a, b) => b.score - a.score)[0] : null
+    }
 
     const loadAssistant = async () => {
         try {
@@ -141,22 +325,57 @@
         }
     }
 
+    const refreshAssistantConfig = async () => {
+        if (!userId) return
+
+        try {
+            const res = await fetch(`http://localhost:8000/api/assistant/config/${userId}`, {
+                cache: "no-store",
+            })
+            const data = await res.json()
+            const nextConfig = data?.user
+
+            if (!nextConfig) return
+
+            const configChanged = !assistantConfig
+                || assistantConfig.theme !== nextConfig.theme
+                || assistantConfig.assistantName !== nextConfig.assistantName
+                || assistantConfig.businessName !== nextConfig.businessName
+
+            if (configChanged) {
+                assistantConfig = nextConfig
+                applyConfig()
+            }
+        } catch (error) {
+            console.log("Assistant Config Refresh Error:", error)
+        }
+    }
+
+
+    const applyTheme = (nextTheme = "dark") => {
+        theme = nextTheme || "dark"
+        popup.className = `chatplug-popup theme-${theme}`
+        button.className = `chatplug-btn theme-${theme}`
+
+        const brandLogo = popup.querySelector(".chatplug-brand-logo")
+        if (brandLogo) {
+            brandLogo.src = "http://localhost:5173/chat-plug-logo.png"
+        }
+    }
 
     const applyConfig = () => {
         if (!assistantConfig) return;
 
-        popup.className = `shifra-popup theme-${assistantConfig.theme}`
+        applyTheme(assistantConfig.theme || "dark")
 
-        button.className = `shifra-btn theme-${assistantConfig.theme}`
-
-        const title = popup.querySelector(".shifra-title")
+        const title = popup.querySelector(".chatplug-title")
 
         title.innerHTML = `Hello! I'm ${assistantConfig.assistantName}`;
 
-        const subTitle = popup.querySelector(".shifra-sub")
+        const subTitle = popup.querySelector(".chatplug-sub")
         subTitle.innerHTML = `
     Welcome to
-    ${assistantConfig.businessName}.
+    ${assistantConfig.businessName || "your website"}.
     <br />
     Ask anything about your website.
   `;
@@ -165,6 +384,7 @@
     }
 
     loadAssistant()
+    setInterval(refreshAssistantConfig, 2000)
 
 
     // Element
@@ -172,27 +392,27 @@
 
     const status =
         popup.querySelector(
-            ".shifra-status"
+            ".chatplug-status"
         );
 
     const wave =
         popup.querySelector(
-            ".shifra-wave"
+            ".chatplug-wave"
         );
 
     const userText =
         popup.querySelector(
-            ".shifra-user-text"
+            ".chatplug-user-text"
         );
 
     const aiText =
         popup.querySelector(
-            ".shifra-ai-text"
+            ".chatplug-ai-text"
         );
 
     const mic =
         popup.querySelector(
-            ".shifra-mic"
+            ".chatplug-mic"
         );
 
 
@@ -240,107 +460,117 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
 
-    if(SpeechRecognition){
+    if (SpeechRecognition) {
 
         const recognition = new SpeechRecognition();
 
         recognition.lang =
-      "en-US";
+            "en-US";
 
-    recognition.continuous =
-      false;
+        recognition.continuous =
+            false;
 
-    recognition.interimResults =
-      false;
-
-
-      mic.onclick=()=>{
-        wave.style.opacity =
-        "1";
-
-      status.innerText =
-        "Listening...";
-
-      userText.innerText =
-        "";
-
-      aiText.innerText =
-        "";
-
-      recognition.start();
-      }
+        recognition.interimResults =
+            false;
 
 
-      recognition.onresult = (e)=>{
-        const text = e.results[0][0].transcript
+        mic.onclick = () => {
+            wave.style.opacity =
+                "1";
 
-        userText.innerText = "You: " + text;
+            status.innerText =
+                "Listening...";
 
-        recognition.stop();
+            userText.innerText =
+                "";
+
+            aiText.innerText =
+                "";
+
+            recognition.start();
+        }
 
 
-        setTimeout( async () => {
-            try {
-                status.innerText = "Thinking...";
-                
+        recognition.onresult = (e) => {
+            const text = e.results[0][0].transcript
 
-                const res = await fetch("http://localhost:8000/api/assistant/ask" , {
-                    method:"POST",
-                    headers:{
-                        "Content-Type":
-                      "application/json",
-                    } ,
-                    body:JSON.stringify({
-                        message:text,
-                        userId
+            userText.innerText = "You: " + text;
+
+            recognition.stop();
+
+
+            setTimeout(async () => {
+                try {
+                    status.innerText = "Thinking...";
+
+
+                    const navigationTarget = findNavigationMatch(text)
+                    const pageContext = buildPageContext()
+
+                    const res = await fetch("http://localhost:8000/api/assistant/ask", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+                        body: JSON.stringify({
+                            message: text,
+                            userId,
+                            currentUrl: window.location.href,
+                            currentPath: window.location.pathname,
+                            pageContext: JSON.stringify(pageContext),
+                            navigationTarget: navigationTarget ? {
+                                path: new URL(navigationTarget.href).pathname,
+                                label: navigationTarget.label,
+                            } : null,
+                        })
                     })
-                })
 
-                const data = await res.json()
-                console.log(data)
+                    const data = await res.json()
+                    console.log(data)
 
-                if(data.success){
+                    if (data.success) {
 
-                    if(data.action === "navigate"){
-                        speak(data.response)
+                        if (data.action === "navigate") {
+                            speak(data.response)
 
-                        setTimeout(()=>{
-                            window.location.href = data.path
+                            if (window.location.pathname !== data.path) {
+                                setTimeout(() => {
+                                    window.location.href = data.path
+                                }, 1500)
+                            }
+                        } else {
+                            speak(data.aiResponse || data.response || "I can help with pricing, support, login, billing, or website navigation.")
+                        }
 
-                        },1500)
+                    } else {
+                        speak("I can help with pricing, support, login, billing, or website navigation.")
 
-                    }else{
-                        speak(data.aiResponse)
                     }
 
-                }else{
-                    speak("Response Error please Check your plan")
+
+
+                } catch (error) {
+                    console.log(error)
+                    speak("AI Server Error")
 
                 }
+            }, 600)
+        };
 
+        recognition.onerror = () => {
+            status.innerText =
+                "Tap button to Speak";
 
-
-            } catch (error) {
-                console.log(error)
-                speak("AI Server Error")
-                
-            }
-        },600)
-      };
-
-      recognition.onerror = ()=>{
-        status.innerText =
-          "Tap button to Speak";
-
-        wave.style.opacity =
-          "0";
-      }
+            wave.style.opacity =
+                "0";
+        }
 
 
     }
-    else{
+    else {
         status.innerText =
-      "Speech Recognition not supported";
+            "Speech Recognition not supported";
     }
 
 

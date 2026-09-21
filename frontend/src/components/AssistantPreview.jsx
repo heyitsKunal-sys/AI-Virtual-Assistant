@@ -1,129 +1,463 @@
-import React, { useState } from 'react'
+import React, { useState } from "react";
 import { CiMicrophoneOn } from "react-icons/ci";
+import { FiMessageCircle, FiSettings } from "react-icons/fi";
 
 const themes = {
   dark: {
-    bg: "bg-[#050816]",
-    overlay: "bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.20),transparent_45%)]",
-    orb: "from-indigo-400 via-violet-500 to-blue-500",
-    cardBorder: "border border-white/10",
-    text: "text-white",
-    sub: "text-white/65",
-    listening: "text-indigo-300",
-    wave: "bg-indigo-300",
-    button: "from-indigo-500 to-violet-500",
-    micGlow: "shadow-[0_0_60px_rgba(99,102,241,0.45)]",
+    card: "#292722",
+    text: "#FFF9F3",
+    sub: "#BEB6AC",
+    accent: "#D97757",
+    soft: "#3A3731",
+    orb: "from-[#F1B49C] via-[#D97757] to-[#A94F36]",
+    wave: "#D97757",
+    button: "#D97757",
+    buttonHover: "#C96442",
+    border: "rgba(255,255,255,0.1)",
   },
+
   light: {
-    bg: "bg-gradient-to-br from-white via-[#f8fafc] to-[#eef2ff]",
-    overlay: "bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.14),transparent_45%)]",
-    orb: "from-indigo-300 via-violet-300 to-blue-300",
-    cardBorder: "border border-indigo-100",
-    text: "text-[#0f1424]",
-    sub: "text-[#475569]",
-    listening: "text-indigo-500",
-    wave: "bg-indigo-500",
-    button: "from-indigo-500 to-blue-500",
-    micGlow: "shadow-[0_0_70px_rgba(79,70,229,0.35)]",
+    card: "#FFFCF7",
+    text: "#292722",
+    sub: "#746F67",
+    accent: "#D97757",
+    soft: "#F5F1EA",
+    orb: "from-[#F8D8C8] via-[#E58C69] to-[#C96442]",
+    wave: "#D97757",
+    button: "#D97757",
+    buttonHover: "#C96442",
+    border: "#DDD7CE",
   },
+
   glass: {
-    bg: "bg-black/20 backdrop-blur-[45px]",
-    overlay: "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_45%)]",
-    orb: "from-indigo-200 via-violet-300 to-blue-300",
-    cardBorder: "border border-white/10",
-    text: "text-white",
-    sub: "text-white/70",
-    listening: "text-indigo-200",
-    wave: "bg-indigo-200",
-    button: "from-violet-400 to-indigo-500",
-    micGlow: "shadow-[0_0_70px_rgba(129,140,248,0.35)]",
+    card: "rgba(57,53,47,0.88)",
+    text: "#FFF9F3",
+    sub: "#D5CCC3",
+    accent: "#E39A7C",
+    soft: "rgba(255,255,255,0.1)",
+    orb: "from-[#F8DDD0] via-[#E39A7C] to-[#C85D3F]",
+    wave: "#E39A7C",
+    button: "#D97757",
+    buttonHover: "#C96442",
+    border: "rgba(255,255,255,0.15)",
   },
+
   neon: {
-    bg: "bg-[#03081a]",
-    overlay: "bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_45%)]",
-    orb: "from-indigo-300 via-blue-400 to-cyan-400",
-    cardBorder: "border border-indigo-400/20",
-    text: "text-indigo-50",
-    sub: "text-indigo-100/70",
-    listening: "text-indigo-300",
-    wave: "bg-indigo-300",
-    button: "from-indigo-400 to-blue-500",
-    micGlow: "shadow-[0_0_70px_rgba(99,102,241,0.45)]",
+    card: "#241B18",
+    text: "#FFF3EA",
+    sub: "#D9BDB1",
+    accent: "#F08A68",
+    soft: "#3A2924",
+    orb: "from-[#FFD5C3] via-[#E88965] to-[#C85D3F]",
+    wave: "#F08A68",
+    button: "#E06F4D",
+    buttonHover: "#C85D3F",
+    border: "rgba(217,119,87,0.25)",
   },
-}
+};
 
 function AssistantPreview() {
-  const [theme, setTheme] = useState("dark")
-  const current = themes[theme]
+
+  // IMPORTANT:
+  // This state belongs ONLY to this preview.
+  const [theme, setTheme] = useState("dark");
+
+  const current = themes[theme];
+
+  const themeButtons = [
+    ["dark", "#292722"],
+    ["light", "#F7F4EE"],
+    ["glass", "#777069"],
+    ["neon", "#C85D3F"],
+  ];
+
   return (
-    <div className='flex items-center justify-center px-3 sm:px-4 py-10 sm:py-14'>
+    <div className="flex items-center justify-center px-4 py-10">
 
-      <div className={`relative w-[280px] h-[450px] sm:w-[330px] sm:h-[500px] md:w-[380px] md:h-[550px] rounded-[32px] sm:rounded-[42px] overflow-hidden transition-all duration-500 ${current.bg} ${current.cardBorder} shadow-[0_20px_80px_rgba(15,20,36,0.28)]`}>
-        <div className={`absolute inset-0 ${current.overlay}`} />
+      {/* PREVIEW CARD */}
+      <div
+        className="
+          relative
+          w-[330px] h-[570px]
+          sm:w-[360px] sm:h-[600px]
+          rounded-[32px]
+          overflow-hidden
+          border
+          shadow-[0_25px_80px_rgba(41,39,34,0.22)]
+          transition-colors duration-300
+        "
+        style={{
+          backgroundColor: current.card,
+          borderColor: current.border,
+        }}
+      >
 
-        <div className='absolute top-4 right-4 sm:top-5 sm:right-5 z-30 flex items-center gap-2'>
+        {/* TOP GLOW */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -top-32
+            left-1/2
+            -translate-x-1/2
+            w-80
+            h-80
+            rounded-full
+            blur-[100px]
+            opacity-30
+          "
+          style={{
+            backgroundColor: current.accent,
+          }}
+        />
 
-          <button onClick={() => setTheme("dark")} className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#050816] border transition-all cursor-pointer ${theme === "dark" ? "border-indigo-400 scale-110" : "border-white/20"
-            }`} />
+        <div className="relative z-10 h-full flex flex-col">
 
-          <button
-            onClick={() => setTheme("light")}
-            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white border transition-all cursor-pointer ${theme === "light" ? "border-indigo-400 scale-110" : "border-gray-300"
-              }`}
-          />
 
-          <button
-            onClick={() => setTheme("glass")}
-            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-white/80 to-white/20 border transition-all cursor-pointer ${theme === "glass" ? "border-white scale-110" : "border-white/20"
-              }`}
-          />
+          {/* HEADER */}
+          <div className="flex items-center justify-between px-6 py-5">
 
-          <button
-            onClick={() => setTheme("neon")}
-            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-r from-indigo-400 to-blue-500 border transition-all cursor-pointer ${theme === "neon" ? "border-indigo-300 scale-110" : "border-transparent"
-              }`}
-          />
+            <div className="flex items-center gap-3">
 
-        </div>
-
-        <div className='relative z-20 flex flex-col items-center justify-between h-full px-5 py-6 sm:px-7 sm:py-8'>
-
-          <div className='relative mt-1'>
-            <div className={`absolute inset-0 scale-[2] rounded-full blur-[80px] bg-gradient-to-r ${current.orb} opacity-60`} />
-            <div className={`relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br ${current.orb} shadow-[0_0_120px_rgba(255,255,255,0.15)] animate-pulse before:absolute before:inset-0 before:rounded-full before:bg-white/20 before:blur-xl`} />
-          </div>
-
-          <div className='text-center'>
-
-            <h2 className={`text-[20px] sm:text-[26px] md:text-[32px] font-semibold ${current.text}`}>
-              Hello! I'm ChatPlug
-            </h2>
-
-            <p className={`mt-4 text-[13px] sm:text-[15px] md:text-[16px] leading-6 sm:leading-7 max-w-[280px] mx-auto ${current.sub}`}>
-              Your smart voice assistant.
-              <br />
-              Ask anything about your website.
-            </p>
-
-            <div className='mt-6 sm:mt-8'>
-              <p className={`text-sm sm:text-base font-medium ${current.listening}`}>Listening...</p>
-
-              <div className='flex items-end justify-center gap-1 sm:gap-1.5 mt-3 sm:mt-4'>
-                <span className={`w-1 h-3 rounded-full ${current.wave} animate-pulse`} />
-                <span className={`w-1 h-6 rounded-full ${current.wave} animate-pulse`} />
-                <span className={`w-1 h-2 rounded-full ${current.wave} animate-pulse`} />
-                <span className={`w-1 h-7 rounded-full ${current.wave} animate-pulse`} />
-                <span className={`w-1 h-4 rounded-full ${current.wave} animate-pulse`} />
-                <span className={`w-1 h-2 rounded-full ${current.wave} animate-pulse`} />
+              <div
+                className="
+                  w-10 h-10
+                  rounded-xl
+                  flex items-center justify-center
+                "
+                style={{
+                  backgroundColor: `${current.accent}20`,
+                }}
+              >
+                <FiMessageCircle
+                  size={19}
+                  style={{
+                    color: current.accent,
+                  }}
+                />
               </div>
+
+              <div>
+
+                <h3
+                  className="font-semibold"
+                  style={{
+                    color: current.text,
+                  }}
+                >
+                  ChatPlug
+                </h3>
+
+                <div className="flex items-center gap-1.5 mt-0.5">
+
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{
+                      backgroundColor: "#6B9B72",
+                    }}
+                  />
+
+                  <span
+                    className="text-xs"
+                    style={{
+                      color: current.sub,
+                    }}
+                  >
+                    AI Assistant
+                  </span>
+
+                </div>
+
+              </div>
+
             </div>
+
+
+            <button
+              type="button"
+              className="
+                w-9 h-9
+                rounded-xl
+                flex items-center justify-center
+                transition
+                hover:opacity-80
+                cursor-pointer
+              "
+              style={{
+                backgroundColor: current.soft,
+                color: current.sub,
+              }}
+            >
+              <FiSettings size={17} />
+            </button>
+
           </div>
 
-          <div className='relative mb-1'>
-            <div className={`absolute inset-0 rounded-full blur-2xl opacity-60 ${current.wave}`} />
-            <button className={`relative w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 rounded-full bg-gradient-to-br ${current.button} ${current.micGlow} flex items-center justify-center`}>
-              <CiMicrophoneOn className="text-white" size={25} />
-            </button>
+
+          {/* THEME SWITCHER */}
+          <div className="relative z-50 flex justify-center gap-3">
+
+            {themeButtons.map(([name, color]) => (
+
+              <button
+                key={name}
+                type="button"
+                aria-label={`Select ${name} theme`}
+                onClick={() => setTheme(name)}
+                className={`
+                  relative
+                  z-50
+                  w-6 h-6
+                  rounded-full
+                  border-2
+                  cursor-pointer
+                  transition-all
+                  duration-200
+                  hover:scale-110
+                  ${
+                    theme === name
+                      ? "scale-125 border-white shadow-lg"
+                      : "border-transparent"
+                  }
+                `}
+                style={{
+                  backgroundColor: color,
+                }}
+              />
+
+            ))}
+
+          </div>
+
+
+          {/* MAIN CONTENT */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+
+
+            {/* AI ORB */}
+            <div className="relative mb-9">
+
+              {/* Orb Glow */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  scale-150
+                  blur-3xl
+                  opacity-30
+                  rounded-full
+                "
+                style={{
+                  backgroundColor: current.accent,
+                }}
+              />
+
+              {/* Orb */}
+              <div
+                className={`
+                  relative
+                  w-32 h-32
+                  rounded-full
+                  bg-gradient-to-br
+                  ${current.orb}
+                  shadow-[0_15px_50px_rgba(217,119,87,0.25)]
+                  animate-pulse
+                  transition-all
+                  duration-300
+                `}
+              />
+
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-5
+                  rounded-full
+                  bg-white/10
+                  blur-md
+                "
+              />
+
+            </div>
+
+
+            {/* GREETING */}
+            <div className="text-center">
+
+              <h2
+                className="
+                  text-[26px]
+                  font-semibold
+                  tracking-tight
+                "
+                style={{
+                  color: current.text,
+                }}
+              >
+                How can I help?
+              </h2>
+
+              <p
+                className="
+                  text-sm
+                  leading-6
+                  mt-2
+                  max-w-[250px]
+                "
+                style={{
+                  color: current.sub,
+                }}
+              >
+                I'm here to answer questions and
+                help your visitors navigate your website.
+              </p>
+
+            </div>
+
+
+            {/* LISTENING */}
+            <div
+              className="
+                mt-8
+                px-4 py-2
+                rounded-full
+                flex
+                items-center
+                gap-2
+              "
+              style={{
+                backgroundColor: current.soft,
+              }}
+            >
+
+              <span
+                className="
+                  w-2 h-2
+                  rounded-full
+                  animate-pulse
+                "
+                style={{
+                  backgroundColor: current.accent,
+                }}
+              />
+
+              <span
+                className="text-xs font-medium"
+                style={{
+                  color: current.sub,
+                }}
+              >
+                Listening
+              </span>
+
+            </div>
+
+
+            {/* WAVEFORM */}
+            <div className="flex items-center gap-1 mt-5 h-8">
+
+              {[3, 6, 10, 16, 23, 14, 8, 5, 12, 18, 7].map(
+                (height, index) => (
+
+                  <span
+                    key={index}
+                    className="
+                      w-1
+                      rounded-full
+                      animate-pulse
+                    "
+                    style={{
+                      height: `${height}px`,
+                      backgroundColor: current.wave,
+                      animationDelay: `${index * 100}ms`,
+                    }}
+                  />
+
+                )
+              )}
+
+            </div>
+
+          </div>
+
+
+          {/* BOTTOM */}
+          <div className="px-6 pb-7">
+
+            <div
+              className="
+                rounded-2xl
+                p-3
+                flex
+                items-center
+                justify-between
+              "
+              style={{
+                backgroundColor: current.soft,
+              }}
+            >
+
+              <div className="pl-2">
+
+                <p
+                  className="text-xs"
+                  style={{
+                    color: current.sub,
+                  }}
+                >
+                  Try saying
+                </p>
+
+                <p
+                  className="
+                    text-sm
+                    font-medium
+                    mt-0.5
+                  "
+                  style={{
+                    color: current.text,
+                  }}
+                >
+                  "What services do you offer?"
+                </p>
+
+              </div>
+
+
+              {/* MICROPHONE */}
+              <button
+                type="button"
+                className="
+                  w-14 h-14
+                  rounded-full
+                  text-white
+                  flex
+                  items-center
+                  justify-center
+                  transition-all
+                  duration-200
+                  hover:scale-105
+                  cursor-pointer
+                "
+                style={{
+                  backgroundColor: current.button,
+                  boxShadow: `0 8px 25px ${current.accent}55`,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    current.buttonHover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    current.button;
+                }}
+              >
+                <CiMicrophoneOn size={28} />
+              </button>
+
+            </div>
+
           </div>
 
         </div>
@@ -131,7 +465,7 @@ function AssistantPreview() {
       </div>
 
     </div>
-  )
+  );
 }
 
-export default AssistantPreview
+export default AssistantPreview;

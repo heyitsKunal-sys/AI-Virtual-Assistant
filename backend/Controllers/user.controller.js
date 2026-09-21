@@ -24,7 +24,9 @@ export const saveAssistant = async (req,res) => {
         businessDescription,
         tone,
         theme,
+        provider,
         geminiApiKey,
+        openAiApiKey,
         pages,
         } = req.body
 
@@ -38,10 +40,16 @@ export const saveAssistant = async (req,res) => {
         user.businessDescription = businessDescription;
         user.tone = tone;
         user.theme = theme;
+        user.provider = provider || "gemini";
 
         if(geminiApiKey){
             user.geminiApiKey = geminiApiKey;
         }
+
+        if(openAiApiKey){
+            user.openAiApiKey = openAiApiKey;
+        }
+
         user.geminiStatus = "active";
         user.pages = pages || [];
 

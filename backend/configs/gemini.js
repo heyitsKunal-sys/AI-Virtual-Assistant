@@ -1,6 +1,7 @@
 const Gemini_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
-const RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504]
+const RETRYABLE_STATUS_CODES = [500, 502, 503, 504]
 const FALLBACK_RESPONSE = "The AI is busy right now. Please try again in a moment."
+const QUOTA_RESPONSE = "The AI daily quota has been reached. Please try again later or upgrade your plan."
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -50,7 +51,7 @@ export const generateGeminiResponse = async ({
                     if (status === 429) {
                         user.geminiStatus = "quota_exceeded"
                         await user.save()
-                        throw new Error(`Gemini API quota exceeded: ${errText}`)
+                        return QUOTA_RESPONSE
                     }
 
                     if (RETRYABLE_STATUS_CODES.includes(status) && attempt < 3) {
@@ -59,7 +60,6 @@ export const generateGeminiResponse = async ({
                     }
 
                     if (RETRYABLE_STATUS_CODES.includes(status)) {
-                        console.warn(`Gemini temporarily unavailable (${status}), using fallback response.`)
                         return FALLBACK_RESPONSE
                     }
 
@@ -99,8 +99,12 @@ export const generateGeminiResponse = async ({
     } catch (error) {
         console.error("Gemini Fetch Error:", error.message)
 
-        if (error.message?.includes("Gemini API key missing") || error.message?.includes("invalid") || error.message?.includes("quota exceeded")) {
+        if (error.message?.includes("Gemini API key missing") || error.message?.includes("invalid")) {
             throw error
+        }
+
+        if (error.message?.includes("quota exceeded") || error.message?.includes("RESOURCE_EXHAUSTED")) {
+            return QUOTA_RESPONSE
         }
 
         return FALLBACK_RESPONSE

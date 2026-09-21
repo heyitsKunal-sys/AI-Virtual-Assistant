@@ -1,5 +1,5 @@
 import React from 'react'
-import logo from "../assets/logo.png"
+import logo from "../assets/chat-plug-logo.png"
 import { cn } from '../lib/utils'
 
 function Logo({ dark = false, className = "" }) {

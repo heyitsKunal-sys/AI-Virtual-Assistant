@@ -71,7 +71,16 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:true
     },
+    provider:{
+        type:String,
+        enum:["gemini","openai"],
+        default:"gemini"
+    },
     geminiApiKey:{
+        type:String,
+        default:""
+    },
+    openAiApiKey:{
         type:String,
         default:""
     },
