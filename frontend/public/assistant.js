@@ -11,9 +11,10 @@
 
     if (!userId || document.querySelector(".chatplug-popup")) return
 
-    let theme = "dark"
+    const initializeAssistant = () => {
+        let theme = "dark"
 
-    let assistantConfig = null
+        let assistantConfig = null
 
 
     // load CSS
@@ -382,8 +383,8 @@
 
     }
 
-    loadAssistant()
-    setInterval(refreshAssistantConfig, 30000)
+        loadAssistant()
+        setInterval(refreshAssistantConfig, 30000)
 
 
     // Element
@@ -572,5 +573,13 @@
             "Speech Recognition not supported";
     }
 
+
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializeAssistant, { once: true })
+    } else {
+        initializeAssistant()
+    }
 
 })();
