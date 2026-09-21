@@ -1,4 +1,4 @@
-import { genToken } from "../Configs/token.js"
+import { genToken } from "../configs/token.js"
 import User from "../Models/user.model.js"
 
 

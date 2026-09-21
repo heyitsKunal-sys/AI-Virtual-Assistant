@@ -1,5 +1,5 @@
-import { generateGeminiResponse } from "../Configs/gemini.js"
-import { generateOpenAIResponse } from "../Configs/openai.js"
+import { generateGeminiResponse } from "../configs/gemini.js"
+import { generateOpenAIResponse } from "../configs/openai.js"
 import User from "../Models/user.model.js"
 
 
