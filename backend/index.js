@@ -15,7 +15,8 @@ const privateCors =
   cors({
 
     origin: [
-      "http://localhost:5173"
+      "http://localhost:5173",
+      "https://ai-virtual-assistant-ukw3.onrender.com"
     ],
 
     credentials: true

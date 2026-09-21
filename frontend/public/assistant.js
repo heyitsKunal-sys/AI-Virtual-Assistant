@@ -6,6 +6,8 @@
     const script = document.currentScript;
 
     const userId = script?.dataset?.userId
+    const BACKEND_URL = "https://ai-virtual-assistant-backend-mqd6.onrender.com"
+    const FRONTEND_URL = "https://ai-virtual-assistant-ukw3.onrender.com"
 
     let theme = "dark"
 
@@ -18,7 +20,7 @@
 
     link.rel = "stylesheet"
 
-    link.href = "http://localhost:5173/assistant.css"
+    link.href = `${FRONTEND_URL}/assistant.css`
 
     document.head.appendChild(link)
 
@@ -36,7 +38,7 @@
 
        <div class="chatplug-top">
             <div class="chatplug-brand-wrap">
-                <img class="chatplug-brand-logo" src="http://localhost:5173/chat-plug-logo.png" alt="ChatPlug logo" />
+                <img class="chatplug-brand-logo" src="${FRONTEND_URL}/chat-plug-logo.png" alt="ChatPlug logo" />
             </div>
 
             <div class="chatplug-orb-wrap">
@@ -87,7 +89,7 @@
             <button class="chatplug-mic">
 
                <img 
-               src="http://localhost:5173/mic.svg"
+               src="${FRONTEND_URL}/mic.svg"
                alt="mic"
                class="chatplug-mic-icon"/>
             </button>
@@ -106,7 +108,7 @@
 
     button.innerHTML = `
     <img 
-    src="http://localhost:5173/chat-plug-logo.png"
+    src="${FRONTEND_URL}/chat-plug-logo.png"
     alt="ChatPlug logo"
     />`;
     document.body.appendChild(button)
@@ -308,7 +310,7 @@
 
     const loadAssistant = async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/assistant/config/${userId}`)
+            const res = await fetch(`${BACKEND_URL}/api/assistant/config/${userId}`)
 
             const data = await res.json()
 
@@ -329,7 +331,7 @@
         if (!userId) return
 
         try {
-            const res = await fetch(`http://localhost:8000/api/assistant/config/${userId}`, {
+            const res = await fetch(`${BACKEND_URL}/api/assistant/config/${userId}`, {
                 cache: "no-store",
             })
             const data = await res.json()
@@ -359,7 +361,7 @@
 
         const brandLogo = popup.querySelector(".chatplug-brand-logo")
         if (brandLogo) {
-            brandLogo.src = "http://localhost:5173/chat-plug-logo.png"
+            brandLogo.src = `${FRONTEND_URL}/chat-plug-logo.png`
         }
     }
 
@@ -507,7 +509,7 @@
                     const navigationTarget = findNavigationMatch(text)
                     const pageContext = buildPageContext()
 
-                    const res = await fetch("http://localhost:8000/api/assistant/ask", {
+                    const res = await fetch(`${BACKEND_URL}/api/assistant/ask`, {
                         method: "POST",
                         headers: {
                             "Content-Type":
