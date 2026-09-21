@@ -1,5 +1,8 @@
 const Gemini_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
+const RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504]
+const FALLBACK_RESPONSE = "The AI is busy right now. Please try again in a moment."
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const generateGeminiResponse = async ({
     prompt,
@@ -12,91 +15,94 @@ export const generateGeminiResponse = async ({
             throw new Error("Gemini API key missing")
         }
 
-        const response = await fetch(`${Gemini_URL}?key=${apikey}`, {
-            method: "POST",
-            headers: {
-                "Content-Type":
-                    "application/json",
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
+        let lastError = null
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const response = await fetch(`${Gemini_URL}?key=${apikey}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        contents: [
                             {
-                                text: prompt
+                                parts: [
+                                    {
+                                        text: prompt
+                                    }
+                                ]
                             }
                         ]
+                    })
+                })
+
+                if (!response.ok) {
+                    const errText = await response.text()
+                    const status = response.status
+
+                    if (status === 400 || status === 401) {
+                        user.geminiStatus = "invalid"
+                        await user.save()
+                        throw new Error(`Gemini API error: ${status} ${errText}`)
                     }
-                ]
-            })
 
-        })
+                    if (status === 429) {
+                        user.geminiStatus = "quota_exceeded"
+                        await user.save()
+                        throw new Error(`Gemini API quota exceeded: ${errText}`)
+                    }
 
-        if (!response.ok) {
+                    if (RETRYABLE_STATUS_CODES.includes(status) && attempt < 3) {
+                        await wait(1000 * attempt)
+                        continue
+                    }
 
-        // Invalid API Key
-        if (
-          response.status === 400 ||
-          response.status === 401
-        ) {
+                    if (RETRYABLE_STATUS_CODES.includes(status)) {
+                        console.warn(`Gemini temporarily unavailable (${status}), using fallback response.`)
+                        return FALLBACK_RESPONSE
+                    }
 
-          user.geminiStatus =
-            "invalid";
+                    throw new Error(`Gemini API error: ${status} ${errText}`)
+                }
 
-          await user.save();
+                user.geminiStatus = "active"
+                await user.save()
+
+                const data = await response.json()
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+                if (!text) {
+                    throw new Error("No text returned from Gemini")
+                }
+
+                return text.trim()
+            } catch (error) {
+                lastError = error
+
+                const message = error?.message || ""
+                const shouldRetry = RETRYABLE_STATUS_CODES.some((code) => message.includes(String(code)))
+                    || message.includes("UNAVAILABLE")
+                    || message.includes("timeout")
+                    || message.includes("fetch")
+
+                if (shouldRetry && attempt < 3) {
+                    await wait(1000 * attempt)
+                    continue
+                }
+
+                throw error
+            }
         }
 
-        // Quota Exceeded
-        if (
-          response.status === 429
-        ) {
-
-          user.geminiStatus =
-            "quota_exceeded";
-
-          await user.save();
-        }
-
-        const err =
-          await response.text();
-
-        throw new Error(err);
-      }
-
-      // =========================
-      // SUCCESS STATUS
-      // =========================
-
-      user.geminiStatus =
-        "active";
-
-      await user.save();
-
-      const data = await response.json()
-      
-
-      const text = data.candidates?.[0]
-        ?.content?.parts?.[0]
-        ?.text;
-
-         if (!text) {
-
-        throw new Error(
-          "No text returned from Gemini"
-        );
-      }
-
-      return text.trim();
+        throw lastError || new Error("Gemini API fetch failed")
     } catch (error) {
+        console.error("Gemini Fetch Error:", error.message)
 
-         console.error(
-        "Gemini Fetch Error:",
-        error.message
-      );
+        if (error.message?.includes("Gemini API key missing") || error.message?.includes("invalid") || error.message?.includes("quota exceeded")) {
+            throw error
+        }
 
-      throw new Error(
-        "Gemini API fetch failed"
-      );
-
+        return FALLBACK_RESPONSE
     }
 }
