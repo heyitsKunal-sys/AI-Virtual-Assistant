@@ -1,11 +1,9 @@
 (function () {
 
-    const embedScript = document.currentScript
-    const startAssistant = () => {
 
     // userData
 
-    const script = embedScript;
+    const script = document.currentScript;
 
     const userId = script?.dataset?.userId
     const BACKEND_URL = "https://ai-virtual-assistant-backend-mqd6.onrender.com"
@@ -195,8 +193,17 @@
         const cleanedMessage = message.toLowerCase().trim()
         if (!cleanedMessage) return null
 
+        const directHome = ["home", "main", "landing", "welcome", "welcome page", "home page", "main page"].some((term) => cleanedMessage.includes(term))
+        if (directHome) {
+            return {
+                label: "Home",
+                href: `${window.location.origin}/`,
+                score: 999,
+            }
+        }
+
         const aliasTerms = new Set()
-        Object.values(navigationAliases).forEach((aliases) => {
+        Object.entries(navigationAliases).forEach(([pageType, aliases]) => {
             aliases.forEach((alias) => {
                 aliasTerms.add(alias)
             })
@@ -244,6 +251,36 @@
             .filter(Boolean)
             .sort((a, b) => b.score - a.score)
 
+        const namedPageRoutes = Object.entries(navigationAliases).map(([pageKey, aliases]) => {
+            const matchedAlias = aliases.find((alias) => cleanedMessage.includes(alias))
+            if (!matchedAlias) return null
+
+            const routeMap = {
+                home: "/",
+                about: "/about",
+                contact: "/contact",
+                pricing: "/pricing",
+                services: "/services",
+                blog: "/blog",
+                faq: "/faq",
+                portfolio: "/portfolio",
+                login: "/login",
+                signup: "/signup",
+                settings: "/settings",
+                privacy: "/privacy",
+                billing: "/billing",
+                dashboard: "/dashboard",
+                team: "/team",
+                testimonials: "/testimonials",
+            }
+
+            return {
+                label: pageKey.charAt(0).toUpperCase() + pageKey.slice(1),
+                href: `${window.location.origin}${routeMap[pageKey] || "/"}`,
+                score: 100,
+            }
+        }).filter(Boolean)
+
         const headingCandidates = [...document.querySelectorAll("h1, h2, h3")]
             .map((heading) => {
                 const text = (heading.textContent || "").trim()
@@ -267,13 +304,8 @@
             .filter(Boolean)
             .sort((a, b) => b.score - a.score)
 
-        const candidates = [...linkCandidates, ...headingCandidates]
+        const candidates = [...namedPageRoutes, ...linkCandidates, ...headingCandidates]
         return candidates.length ? candidates.sort((a, b) => b.score - a.score)[0] : null
-    }
-
-    const isNavigationRequest = (message) => {
-        const isInformationQuestion = /\b(what|how|why|when|where|who|tell me|explain|describe)\b/i.test(message)
-        return !isInformationQuestion && /\b(open|go to|navigate|show me|take me|visit|go)\b/i.test(message)
     }
 
     const loadAssistant = async () => {
@@ -474,9 +506,7 @@
                     status.innerText = "Thinking...";
 
 
-                    const navigationTarget = isNavigationRequest(text)
-                        ? findNavigationMatch(text)
-                        : null
+                    const navigationTarget = findNavigationMatch(text)
                     const pageContext = buildPageContext()
 
                     const res = await fetch(`${BACKEND_URL}/api/assistant/ask`, {
@@ -546,11 +576,4 @@
     }
 
 
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", startAssistant, { once: true })
-    } else {
-        startAssistant()
-    }
 })();
