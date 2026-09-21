@@ -151,7 +151,7 @@ function Builder({ user, setUser }) {
 
 
   const embedCode =
-    `<script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}"></script>`;
+    `<script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}" data-backend-url="${ServerUrl}"></script>`;
 
 
   return (
@@ -305,7 +305,7 @@ function Builder({ user, setUser }) {
 
   Your Website Content
 
-  <script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}"></script>
+  <script src="${CLIENT_URL}/assistant.js" data-user-id="${user?._id}" data-backend-url="${ServerUrl}"></script>
 
 </body>`}
 

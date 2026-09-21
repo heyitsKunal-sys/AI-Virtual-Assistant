@@ -1,13 +1,15 @@
 (function () {
 
-
-    // userData
-
     const script = document.currentScript;
 
-    const userId = script?.dataset?.userId
-    const BACKEND_URL = "https://ai-virtual-assistant-backend-mqd6.onrender.com"
-    const FRONTEND_URL = "https://ai-virtual-assistant-ukw3.onrender.com"
+    if (!script) return
+
+    const userId = script.dataset.userId
+    const scriptUrl = new URL(script.src, window.location.href)
+    const FRONTEND_URL = scriptUrl.origin
+    const BACKEND_URL = script.dataset.backendUrl || "https://ai-virtual-assistant-backend-mqd6.onrender.com"
+
+    if (!userId || document.querySelector(".chatplug-popup")) return
 
     let theme = "dark"
 
@@ -203,7 +205,7 @@
         }
 
         const aliasTerms = new Set()
-        Object.entries(navigationAliases).forEach(([pageType, aliases]) => {
+        Object.entries(navigationAliases).forEach(([, aliases]) => {
             aliases.forEach((alias) => {
                 aliasTerms.add(alias)
             })
@@ -310,7 +312,7 @@
 
     const loadAssistant = async () => {
         try {
-            const res = await fetch(`${BACKEND_URL}/api/assistant/config/${userId}`)
+            const res = await fetch(`${BACKEND_URL}/api/assistant/config/${encodeURIComponent(userId)}`)
 
             const data = await res.json()
 
@@ -331,7 +333,7 @@
         if (!userId) return
 
         try {
-            const res = await fetch(`${BACKEND_URL}/api/assistant/config/${userId}`, {
+            const res = await fetch(`${BACKEND_URL}/api/assistant/config/${encodeURIComponent(userId)}`, {
                 cache: "no-store",
             })
             const data = await res.json()
@@ -372,21 +374,16 @@
 
         const title = popup.querySelector(".chatplug-title")
 
-        title.innerHTML = `Hello! I'm ${assistantConfig.assistantName}`;
+                title.textContent = `Hello! I'm ${assistantConfig.assistantName || "ChatPlug"}`;
 
         const subTitle = popup.querySelector(".chatplug-sub")
-        subTitle.innerHTML = `
-    Welcome to
-    ${assistantConfig.businessName || "your website"}.
-    <br />
-    Ask anything about your website.
-  `;
+                subTitle.textContent = `Welcome to ${assistantConfig.businessName || "your website"}. Ask anything about your website.`;
 
 
     }
 
     loadAssistant()
-    setInterval(refreshAssistantConfig, 2000)
+    setInterval(refreshAssistantConfig, 30000)
 
 
     // Element
