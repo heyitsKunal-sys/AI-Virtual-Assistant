@@ -4,8 +4,8 @@
   position:fixed;
   right:18px;
   bottom:18px;
-  width:68px;
-  height:68px;
+  width:68px !important;
+  height:68px !important;
   border:none;
   border-radius:999px;
   cursor:pointer;
@@ -17,9 +17,11 @@
   transition:.3s;
 }
 .chatplug-btn img{
-  width:34px;
-  height:34px;
-  object-fit:contain;
+  display:block !important;
+  width:34px !important;
+  height:34px !important;
+  max-width:100% !important;
+  object-fit:contain !important;
 }
 
 /* popup */
@@ -29,13 +31,13 @@
   right:18px;
   bottom:98px;
 
-  width:360px;
-  min-width:360px;
-  max-width:360px;
+  width:360px !important;
+  min-width:360px !important;
+  max-width:360px !important;
 
-  height:580px;
-  min-height:580px;
-  max-height:580px;
+  height:580px !important;
+  min-height:580px !important;
+  max-height:580px !important;
 
   border-radius:38px;
   overflow:hidden;
@@ -90,9 +92,11 @@
 }
 
 .chatplug-brand-logo{
-  width:32px;
-  height:32px;
-  object-fit:contain;
+  display:block !important;
+  width:32px !important;
+  height:32px !important;
+  max-width:100% !important;
+  object-fit:contain !important;
 }
 
 .chatplug-orb-wrap{
@@ -281,9 +285,11 @@ margin-top:18px;
 }
 
 .chatplug-mic-icon{
-   width:30px;
-  height:30px;
-  object-fit:contain;
+   display:block !important;
+  width:30px !important;
+  height:30px !important;
+  max-width:100% !important;
+  object-fit:contain !important;
 }
 
 
@@ -589,13 +595,13 @@ margin-top:18px;
 
 @media(max-width:640px){
   .chatplug-popup{
-    width:340px;
-    min-width:340px;
-    max-width:340px;
+    width:340px !important;
+    min-width:340px !important;
+    max-width:340px !important;
 
-    height:560px;
-    min-height:560px;
-    max-height:560px;
+    height:560px !important;
+    min-height:560px !important;
+    max-height:560px !important;
 
     right:50%;
     transform:translateX(50%);
@@ -605,14 +611,14 @@ margin-top:18px;
   }
 
   .chatplug-btn{
-    width:64px;
-    height:64px;
+    width:64px !important;
+    height:64px !important;
     right:14px;
     bottom:14px;
   }
   .chatplug-btn img{
-    width: 30px;
-    height: 30px;
+    width: 30px !important;
+    height: 30px !important;
   }
 
    .chatplug-title{

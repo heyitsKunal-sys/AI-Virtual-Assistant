@@ -43,6 +43,46 @@
 
     document.head.appendChild(link);
 
+    const criticalStyle = document.createElement("style");
+
+    criticalStyle.textContent = `
+        .chatplug-popup {
+            display: none;
+            position: fixed !important;
+            right: 18px !important;
+            bottom: 98px !important;
+            width: 360px !important;
+            height: 580px !important;
+            z-index: 999999 !important;
+            overflow: hidden !important;
+        }
+        .chatplug-btn {
+            position: fixed !important;
+            right: 18px !important;
+            bottom: 18px !important;
+            width: 68px !important;
+            height: 68px !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+        }
+        .chatplug-btn img,
+        .chatplug-brand-logo,
+        .chatplug-mic-icon {
+            display: block !important;
+            max-width: 100% !important;
+            object-fit: contain !important;
+        }
+        .chatplug-btn img {
+            width: 34px !important;
+            height: 34px !important;
+        }
+    `;
+
+    document.head.appendChild(criticalStyle);
+
 
     // =========================================================
     // CREATE POPUP
@@ -65,6 +105,8 @@
                         class="chatplug-brand-logo"
                         src="${FRONTEND_URL}/chat-plug-logo.png"
                         alt="ChatPlug logo"
+                        width="32"
+                        height="32"
                     />
 
                 </div>
@@ -148,6 +190,8 @@
         <img
             src="${FRONTEND_URL}/chat-plug-logo.png"
             alt="ChatPlug logo"
+            width="34"
+            height="34"
         />
     `;
 
