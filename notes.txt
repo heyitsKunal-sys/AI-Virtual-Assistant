@@ -1,0 +1,964 @@
+CHATPLUG - PROJECT INTERVIEW REVISION NOTES
+============================================
+
+Purpose of this file
+--------------------
+This document explains the ChatPlug project in simple language so I can revise it before an interview.
+It explains:
+
+1. The problem statement
+2. The solution
+3. The complete system architecture
+4. How the folders are arranged
+5. What each important file does
+6. How the frontend and backend communicate
+7. How the embeddable assistant works
+8. How the project was built step by step
+9. Questions an interviewer may ask
+
+
+1. PROJECT NAME
+---------------
+
+ChatPlug - AI Virtual Assistant
+
+ChatPlug is a voice-enabled AI assistant that a business owner can configure and embed into any website using one JavaScript script tag.
+
+The assistant can:
+
+- Listen to a visitor using the browser microphone.
+- Convert the visitor's speech into text.
+- Send the question to the backend.
+- Use Gemini or OpenAI to generate an answer.
+- Speak the answer back to the visitor.
+- Read basic context from the current website page.
+- Help visitors navigate to pages such as pricing, contact, login, or billing.
+- Use the business owner's selected name, theme, tone, and business information.
+
+
+2. PROBLEM STATEMENT
+--------------------
+
+Many businesses have websites, but website visitors often cannot quickly find the information they need.
+
+Common problems are:
+
+- Visitors leave the website because they cannot find an answer.
+- Website navigation can be confusing.
+- Small businesses may not have a live support team available all the time.
+- A normal chatbot may not understand the business context.
+- Adding an AI assistant usually requires complicated frontend and backend integration.
+- A business owner may want the same assistant on a different website or application.
+
+The main problem is:
+
+How can we provide a simple, customizable, voice-based AI assistant that a business can add to any website without rebuilding that website?
+
+
+3. PROJECT SOLUTION
+-------------------
+
+ChatPlug solves this problem with two main parts:
+
+A. A dashboard application
+B. A standalone embeddable assistant widget
+
+The business owner uses the dashboard to:
+
+- Sign in with Google.
+- Set an assistant name.
+- Add the business name and description.
+- Select a visual theme.
+- Select a tone: friendly, professional, or sales.
+- Choose Gemini or OpenAI.
+- Add the provider API key.
+- Add important website pages and keywords.
+- See usage and billing information.
+- Copy a generated script tag.
+
+The visitor sees only the assistant widget on the business website.
+
+The widget is loaded with a normal JavaScript tag, for example:
+
+<script
+  src="https://ai-virtual-assistant-ukw3.onrender.com/assistant.js"
+  data-user-id="YOUR_USER_ID"
+  data-backend-url="https://ai-virtual-assistant-backend-mqd6.onrender.com"
+></script>
+
+This means the external website does not need to install React, Tailwind, or the ChatPlug dashboard code.
+
+
+4. HIGH-LEVEL SYSTEM ARCHITECTURE
+----------------------------------
+
+The project uses a client-server architecture.
+
+                         +----------------------+
+                         |  Business Owner       |
+                         |  React Dashboard      |
+                         +----------+-----------+
+                                    |
+                                    | HTTPS API requests
+                                    v
+                         +----------------------+
+                         |  Express Backend      |
+                         |  Auth, AI, Billing    |
+                         +----+------------+----+
+                              |            |
+                              |            |
+                              v            v
+                    +-------------+   +----------------+
+                    | MongoDB     |   | Gemini/OpenAI  |
+                    | Users/config|   | AI responses   |
+                    +-------------+   +----------------+
+
+
+              External Customer Website
+                         |
+                         | Loads assistant.js
+                         v
+                 +-------------------+
+                 | Standalone Widget |
+                 | Voice + Popup     |
+                 +---------+---------+
+                           |
+                           | POST /api/assistant/ask
+                           v
+                 +-------------------+
+                 | Express Backend   |
+                 +-------------------+
+
+Simple explanation:
+
+- The frontend is the control panel.
+- The backend is the central brain and security layer.
+- MongoDB stores users and assistant settings.
+- Gemini or OpenAI generates answers.
+- assistant.js is a small independent client that runs on another website.
+
+
+5. TECHNOLOGY STACK
+-------------------
+
+Frontend:
+
+- React
+- Vite
+- React Router
+- Axios
+- Tailwind CSS
+- React Icons
+- Firebase Authentication
+
+Backend:
+
+- Node.js
+- Express
+- Mongoose
+- MongoDB
+- JSON Web Tokens (JWT)
+- Cookie Parser
+- CORS
+- Dotenv
+
+External services:
+
+- Firebase Authentication for Google sign-in
+- Google Gemini API or OpenAI API for AI responses
+- Razorpay for payments
+- Render for deployment
+
+Browser APIs:
+
+- SpeechRecognition or webkitSpeechRecognition for speech input
+- SpeechSynthesis for spoken output
+
+
+6. FOLDER STRUCTURE
+--------------------
+
+AI Virtual Assistant/
+|
++-- README.md
++-- PROJECT_INTERVIEW_NOTES.txt
+|
++-- backend/
+|   +-- index.js
+|   +-- package.json
+|   +-- configs/
+|   |   +-- connectDb.js
+|   |   +-- gemini.js
+|   |   +-- openai.js
+|   |   +-- razorpay.js
+|   |   +-- token.js
+|   +-- Controllers/
+|   |   +-- assistant.controller.js
+|   |   +-- auth.controller.js
+|   |   +-- billing.controller.js
+|   |   +-- user.controller.js
+|   +-- Middleware/
+|   |   +-- isAuth.js
+|   +-- Models/
+|   |   +-- billing.model.js
+|   |   +-- user.model.js
+|   +-- Routes/
+|       +-- assistant.route.js
+|       +-- auth.route.js
+|       +-- billing.route.js
+|       +-- user.route.js
+|
++-- frontend/
+    +-- index.html
+    +-- package.json
+    +-- vite.config.js
+    +-- eslint.config.js
+    +-- public/
+    |   +-- assistant.js
+    |   +-- assistant.css
+    |   +-- chat-plug-logo.png
+    |   +-- mic.svg
+    +-- src/
+        +-- App.jsx
+        +-- App.css
+        +-- index.css
+        +-- main.jsx
+        +-- assets/
+        +-- components/
+        |   +-- AssistantPreview.jsx
+        |   +-- Logo.jsx
+        |   +-- Navbar.jsx
+        |   +-- ProtectedRoute.jsx
+        |   +-- ui/
+        +-- lib/
+        |   +-- utils.js
+        +-- pages/
+        |   +-- Billing.jsx
+        |   +-- Builder.jsx
+        |   +-- Home.jsx
+        |   +-- Login.jsx
+        +-- utils/
+            +-- firebase.js
+
+
+7. BACKEND FOLDER EXPLANATION
+-----------------------------
+
+backend/index.js
+
+This is the backend entry point.
+
+It does the following:
+
+1. Loads environment variables using dotenv.
+2. Creates an Express application.
+3. Enables JSON request parsing.
+4. Enables cookie parsing.
+5. Configures CORS.
+6. Registers API route groups.
+7. Starts the server.
+8. Connects to MongoDB.
+
+Route groups:
+
+- /api/auth       Login and logout
+- /api/user       Current user and assistant configuration
+- /api/billing    Razorpay order and payment verification
+- /api/assistant  Public assistant configuration and AI questions
+
+
+backend/configs/connectDb.js
+
+This file connects the backend to MongoDB using MONGODB_URL from the environment.
+
+Why it is separate:
+
+Keeping the database connection in its own file makes index.js easier to read and makes the connection reusable.
+
+
+backend/configs/gemini.js
+
+This file contains the Gemini API integration.
+
+It:
+
+- Sends a prompt to Gemini.
+- Handles API errors.
+- Retries temporary server errors.
+- Detects invalid API keys.
+- Detects quota errors.
+- Updates the provider status on the user record.
+- Returns a fallback response if the AI service is temporarily unavailable.
+
+
+backend/configs/openai.js
+
+This file performs the same general job for OpenAI.
+
+The selected provider is read from the user record. The user can choose Gemini or OpenAI in the Builder page.
+
+
+backend/configs/razorpay.js
+
+This creates the Razorpay client using:
+
+- RAZORPAY_KEY_ID
+- RAZORPAY_KEY_SECRET
+
+The billing controller uses this client to create payment orders.
+
+
+backend/configs/token.js
+
+This creates a JWT token containing the user's ID.
+
+The token expires after 7 days and is later stored in an HTTP cookie by the authentication flow.
+
+
+backend/Middleware/isAuth.js
+
+This middleware protects private dashboard endpoints.
+
+Process:
+
+1. Read the token from req.cookies.token.
+2. Reject the request if there is no token.
+3. Verify the token using JWT_SECRET.
+4. Read the user ID from the verified token.
+5. Store it in req.userId.
+6. Call next() so the controller can continue.
+
+This prevents unauthenticated users from changing assistant settings or accessing private account data.
+
+
+backend/Models/user.model.js
+
+This is the main MongoDB user schema.
+
+It stores:
+
+- Name and email
+- Assistant name
+- Business name, type, and description
+- Tone and theme
+- Whether voice and navigation are enabled
+- Website pages and keywords
+- Selected AI provider
+- Gemini and OpenAI API keys
+- Provider status
+- Total messages
+- Current plan
+- Request limit
+- Pro expiration date
+- Setup completion state
+
+The nested page schema stores:
+
+- Page name
+- Page path
+- Keywords for matching visitor navigation requests
+
+Example page record:
+
+{
+  name: "Pricing",
+  path: "/pricing",
+  keywords: ["price", "plans", "cost"]
+}
+
+
+backend/Models/billing.model.js
+
+This stores payment-related records such as orders and payment identifiers.
+
+
+backend/Routes/auth.route.js
+
+Routes:
+
+POST /api/auth/google
+GET  /api/auth/logout
+
+The route file only maps URLs to controller functions. It does not contain the main business logic.
+
+
+backend/Routes/user.route.js
+
+Routes:
+
+GET  /api/user/current-user
+POST /api/user/save-assistant
+
+Both routes use isAuth because they contain private account information.
+
+
+backend/Routes/billing.route.js
+
+Routes:
+
+POST /api/billing/order
+POST /api/billing/verify
+
+Both routes require authentication.
+
+
+backend/Routes/assistant.route.js
+
+Routes:
+
+GET  /api/assistant/config/:userId
+POST /api/assistant/ask
+
+These routes are used by the external widget. They use public CORS so another website can call them.
+
+
+backend/Controllers/auth.controller.js
+
+This contains Google login and logout logic.
+
+The general login flow is:
+
+1. Firebase authenticates the user in the frontend.
+2. The frontend sends the Firebase user information to the backend.
+3. The backend finds or creates the MongoDB user.
+4. The backend creates a JWT.
+5. The JWT is sent back as a cookie.
+6. Future private requests use that cookie.
+
+
+backend/Controllers/user.controller.js
+
+This contains logic for:
+
+- Getting the currently logged-in user.
+- Saving assistant settings from the Builder page.
+
+
+backend/Controllers/assistant.controller.js
+
+This is the most important backend controller for the embedded assistant.
+
+getAssistantConfig:
+
+- Receives a user ID from the widget.
+- Finds that user's assistant configuration.
+- Does not return the Gemini API key.
+- Sends the configuration to assistant.js.
+
+askAssistant:
+
+1. Receives the visitor message and user ID.
+2. Finds the correct assistant owner.
+3. Checks that an AI API key exists.
+4. Checks the free/pro usage rules.
+5. Checks billing and FAQ intents.
+6. Checks whether navigation is enabled.
+7. Uses the current page context and configured pages.
+8. Builds a prompt for Gemini or OpenAI.
+9. Returns an AI response or navigation instruction.
+10. Increases message usage when appropriate.
+
+Important design idea:
+
+The browser never directly calls Gemini or OpenAI with the business owner's key. The browser calls our backend. The backend reads the key from the database and calls the AI provider. This is important because API keys should not be exposed in frontend code.
+
+
+8. FRONTEND FOLDER EXPLANATION
+------------------------------
+
+frontend/index.html
+
+This is the HTML shell used by Vite. It contains the root element where React is mounted.
+
+frontend/src/main.jsx
+
+This is the React entry point. It renders the App component into the root element.
+
+frontend/src/App.jsx
+
+This is the main frontend application component.
+
+It:
+
+- Defines frontend routes.
+- Stores the current user in React state.
+- Calls /api/user/current-user when the app starts.
+- Shows protected pages only after checking authentication.
+- Provides the main server and client URL constants.
+
+Routes include:
+
+- /login
+- /
+- /builder
+- /billing
+
+frontend/src/utils/firebase.js
+
+This initializes Firebase and creates the Google authentication provider.
+The Firebase API key is read from VITE_FIREBASE_API_KEY.
+
+frontend/src/components/ProtectedRoute.jsx
+
+This prevents users from viewing private dashboard pages before authentication has been confirmed.
+
+frontend/src/components/Navbar.jsx
+
+This displays the main dashboard navigation and user actions.
+
+frontend/src/components/AssistantPreview.jsx
+
+This is a visual preview of the assistant inside the dashboard. It allows the user to see different themes before embedding the real widget.
+
+frontend/src/pages/Home.jsx
+
+This is the landing/dashboard home page. It explains the product and links the user to the Builder.
+
+frontend/src/pages/Login.jsx
+
+This contains the Google sign-in interface and starts the Firebase authentication flow.
+
+frontend/src/pages/Builder.jsx
+
+This is the main configuration page.
+
+It allows the user to:
+
+- Edit assistant details.
+- Select a theme and tone.
+- Select an AI provider.
+- Save provider API keys.
+- Add website pages and keywords.
+- See plan and usage information.
+- Copy the embed script.
+
+The embed string is generated from the user's ID, frontend URL, and backend URL.
+
+frontend/src/pages/Billing.jsx
+
+This page starts the Razorpay payment flow and displays plan information.
+
+frontend/src/components/ui/
+
+These files contain reusable UI components such as:
+
+- Button
+- Card
+- Input
+- Label
+- Textarea
+- Badge
+
+Reusable components reduce duplicate markup and keep the visual style consistent.
+
+
+9. THE EMBEDDABLE WIDGET
+-------------------------
+
+frontend/public/assistant.js
+
+This is intentionally written as standalone browser JavaScript instead of React.
+That is what makes it possible to embed into unrelated websites.
+
+The script does the following:
+
+1. Finds its own script tag using document.currentScript.
+2. Reads data-user-id.
+3. Reads data-backend-url.
+4. Derives the asset host from the script URL.
+5. Loads assistant.css dynamically.
+6. Waits for the page DOM when necessary.
+7. Creates the floating launcher button.
+8. Creates the hidden popup.
+9. Loads assistant configuration.
+10. Applies the selected assistant name and theme.
+11. Starts speech recognition when the microphone button is clicked.
+12. Collects basic page context.
+13. Sends the question to /api/assistant/ask.
+14. Speaks the result using SpeechSynthesis.
+15. Navigates the current host website if the backend returns a navigation action.
+
+Why document.currentScript is important:
+
+The widget can be hosted on the ChatPlug frontend but loaded by another website. document.currentScript tells the widget which script tag loaded it, so it can discover its own origin and assets.
+
+Why the widget waits for DOMContentLoaded:
+
+If a website loads the script in the head before document.body exists, the widget cannot append its popup yet. Waiting for DOMContentLoaded prevents that problem.
+
+frontend/public/assistant.css
+
+This contains all widget styles, including:
+
+- Floating launcher position
+- Popup size and layout
+- Themes
+- Orb animation
+- Microphone button
+- Wave animation
+- Mobile adjustments
+
+frontend/public/chat-plug-logo.png and mic.svg
+
+These are static assets used by the widget.
+
+
+10. FRONTEND AND BACKEND COMMUNICATION
+---------------------------------------
+
+The frontend and backend communicate using HTTP requests with JSON data.
+Axios is used in the React dashboard. The standalone widget uses fetch because it must have no dependency on the dashboard bundle.
+
+Example dashboard request:
+
+Frontend:
+
+axios.post(
+  ServerUrl + "/api/user/save-assistant",
+  assistantData,
+  { withCredentials: true }
+)
+
+Backend:
+
+- Express receives the request.
+- isAuth verifies the cookie.
+- user.controller.js saves the data.
+- MongoDB stores the updated user.
+- The backend returns the updated user.
+
+Example widget request:
+
+fetch(`${BACKEND_URL}/api/assistant/ask`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    message,
+    userId,
+    currentUrl,
+    currentPath,
+    pageContext,
+    navigationTarget
+  })
+})
+
+The response may be a normal answer:
+
+{
+  success: true,
+  aiResponse: "Our pricing plans start at..."
+}
+
+Or a navigation response:
+
+{
+  success: true,
+  action: "navigate",
+  path: "/pricing",
+  response: "Opening Pricing"
+}
+
+
+11. COMPLETE USER FLOW
+----------------------
+
+A. Business owner login
+
+1. User opens the React dashboard.
+2. User clicks Google sign-in.
+3. Firebase authenticates the user.
+4. Frontend sends the identity information to /api/auth/google.
+5. Backend creates or finds the MongoDB user.
+6. Backend creates a JWT cookie.
+7. Frontend requests /api/user/current-user.
+
+B. Business owner configures the assistant
+
+1. User opens /builder.
+2. User enters assistant and business details.
+3. User selects Gemini or OpenAI.
+4. User enters the provider key.
+5. User adds website pages and keywords.
+6. Frontend sends the data to /api/user/save-assistant.
+7. Backend validates the cookie and saves the data in MongoDB.
+8. Builder displays the generated embed code.
+
+C. Visitor uses the embedded assistant
+
+1. External website loads assistant.js.
+2. Widget reads the user ID from the script tag.
+3. Widget loads its CSS and creates the launcher.
+4. Visitor clicks the launcher and popup appears.
+5. Visitor clicks the microphone.
+6. Browser SpeechRecognition converts speech into text.
+7. Widget collects page context.
+8. Widget calls the backend /api/assistant/ask endpoint.
+9. Backend loads the correct user configuration.
+10. Backend checks plan limits and intents.
+11. Backend calls Gemini or OpenAI.
+12. Backend returns the answer.
+13. Widget speaks the answer.
+14. If required, widget navigates the external website.
+
+
+12. HOW THE PROJECT WAS BUILT - STEP BY STEP
+--------------------------------------------
+
+Step 1: Decide the product idea
+
+The first decision was to build a reusable AI assistant instead of a chatbot locked inside one application. This created the requirement for an independent JavaScript widget.
+
+Step 2: Create the backend foundation
+
+- Create the backend folder.
+- Initialize a Node.js package.
+- Install Express, Mongoose, CORS, cookie-parser, dotenv, JWT, and Razorpay.
+- Create index.js.
+- Add JSON parsing and cookies.
+- Add environment variable loading.
+- Connect MongoDB.
+
+Step 3: Create the database model
+
+- Create the User model.
+- Add assistant settings.
+- Add provider keys and provider selection.
+- Add plan and usage fields.
+- Add a nested pages array for website navigation.
+- Add timestamps for record tracking.
+
+Step 4: Build authentication
+
+- Configure Firebase in the frontend.
+- Add Google sign-in UI.
+- Send the signed-in user to the backend.
+- Create or find the MongoDB user.
+- Generate a JWT.
+- Store the JWT in a cookie.
+- Add isAuth middleware for private routes.
+
+Step 5: Build the dashboard
+
+- Create React routing.
+- Add protected routes.
+- Add navbar and reusable UI components.
+- Create home, login, builder, and billing pages.
+- Load the current user when the application starts.
+
+Step 6: Build assistant configuration
+
+- Add form state to Builder.jsx.
+- Allow name, business, tone, theme, provider, and API key settings.
+- Add page name, path, and keyword inputs.
+- Save the configuration through the backend.
+- Return the saved user to update the UI.
+
+Step 7: Add AI provider integrations
+
+- Create gemini.js.
+- Create openai.js.
+- Keep provider calls on the backend.
+- Add retries and fallback responses.
+- Track invalid keys and quota status.
+
+Step 8: Build the assistant controller
+
+- Create a public configuration endpoint.
+- Create the question endpoint.
+- Validate the user ID and message.
+- Check plan limits.
+- Add FAQ and billing intent handling.
+- Add navigation intent handling.
+- Build a website-aware AI prompt.
+- Call the selected provider.
+- Return a simple JSON response to the widget.
+
+Step 9: Build the independent widget
+
+- Create assistant.js in frontend/public.
+- Use normal browser JavaScript so any website can load it.
+- Create the launcher and popup dynamically.
+- Load CSS dynamically.
+- Use document.currentScript to read configuration.
+- Add microphone and speech output.
+- Send page context to the backend.
+- Add navigation support.
+
+Step 10: Add billing
+
+- Configure Razorpay.
+- Create order and verification routes.
+- Add plan status and expiration fields.
+- Check plan limits when the assistant answers.
+
+Step 11: Test and build
+
+Frontend commands:
+
+cd frontend
+npm run build
+npm run lint
+
+Backend command:
+
+cd backend
+node index.js
+
+Step 12: Deploy
+
+- Deploy the backend as one service.
+- Deploy the frontend as another service.
+- Add backend environment variables.
+- Add the frontend Firebase environment variable.
+- Update deployed URLs if they change.
+- Redeploy frontend after changing assistant.js.
+- Copy the generated script tag into the customer website.
+
+
+13. WHY FRONTEND AND BACKEND ARE SEPARATE
+------------------------------------------
+
+The frontend and backend are separated for several reasons:
+
+1. Security
+
+API keys, database credentials, and JWT signing secrets must stay on the server.
+
+2. Scalability
+
+The React dashboard and the API can be deployed and scaled independently.
+
+3. Reusability
+
+The public assistant widget can call the backend without loading the full dashboard.
+
+4. Clear responsibilities
+
+The frontend manages user interaction and display.
+The backend manages business rules, persistence, AI calls, authentication, and payments.
+
+5. Multiple clients
+
+The same backend can serve:
+
+- The React dashboard.
+- The external embeddable widget.
+- Future mobile apps or other clients.
+
+
+14. ENVIRONMENT VARIABLES
+-------------------------
+
+Backend .env:
+
+PORT=8000
+MONGODB_URL=your-mongodb-connection-string
+JWT_SECRET=your-long-secret
+RAZORPAY_KEY_ID=your-key-id
+RAZORPAY_KEY_SECRET=your-key-secret
+
+Frontend .env:
+
+VITE_FIREBASE_API_KEY=your-firebase-web-api-key
+
+Never commit these values to Git.
+
+The individual Gemini and OpenAI keys are entered by users in the Builder and stored with their user configuration. In a production system, these keys should ideally be encrypted at rest and carefully protected.
+
+
+15. INTERVIEW EXPLANATION IN 60 SECONDS
+----------------------------------------
+
+"I built ChatPlug, a voice-enabled AI assistant platform. It has a React and Vite dashboard where a business owner signs in with Google, configures the assistant, selects Gemini or OpenAI, adds business information, and defines website pages. The Express backend uses MongoDB and Mongoose to store users and configurations. Authentication is handled by Firebase on the frontend and JWT cookies on the backend. The important feature is a standalone assistant.js widget. A customer can paste one script tag into any HTTPS website. The widget uses browser speech recognition, collects limited page context, calls the backend, and speaks the AI response back to the visitor. The backend keeps provider keys private, checks plan limits, handles navigation and billing intents, and calls the selected AI provider. The frontend and backend are separate so the dashboard, public widget, API, and sensitive credentials have clear boundaries."
+
+
+16. COMMON INTERVIEW QUESTIONS AND ANSWERS
+--------------------------------------------
+
+Q1. Why did you use React?
+
+React makes it easier to build reusable UI components and manage changing state such as the logged-in user, assistant form values, themes, and loading states.
+
+Q2. Why did you use Express?
+
+Express is lightweight and works well for creating REST APIs, middleware, authentication flows, and route-based backend modules.
+
+Q3. Why MongoDB?
+
+The user record contains flexible assistant configuration, including a variable list of website pages and keywords. MongoDB documents are convenient for this type of nested and evolving data.
+
+Q4. Why is assistant.js not a React component?
+
+It must run on websites that do not use React. Plain JavaScript makes the widget framework-independent and easy to embed with one script tag.
+
+Q5. How do you keep API keys secure?
+
+The widget sends requests to our backend. The backend reads the provider key from the database and calls Gemini or OpenAI. The provider key is never sent to the browser.
+
+Q6. How does authentication work?
+
+Firebase performs Google authentication. The backend receives the authenticated user information, creates a JWT, and stores it in a cookie. Protected routes verify that cookie with isAuth middleware.
+
+Q7. How does the external website context work?
+
+assistant.js reads the page title, headings, visible text, and labeled links. It sends this context with the visitor's question so the backend can create a more relevant prompt.
+
+Q8. How does navigation work?
+
+The widget detects matching links and page names. The backend can also infer common routes. If the backend returns action: navigate, the widget changes window.location to the returned path.
+
+Q9. What happens if the AI provider fails?
+
+The provider modules handle invalid keys, quota errors, temporary errors, retries, and fallback messages. The user status is also updated when possible.
+
+Q10. Why is CORS required?
+
+The dashboard and backend run on different origins, and the public widget may run on any customer website. CORS tells the browser which cross-origin requests are allowed.
+
+Q11. Why use cookies for JWT?
+
+Cookies allow the browser to send the token automatically with private API requests. HttpOnly cookies would be preferable for stronger protection against JavaScript access in a production hardening pass.
+
+Q12. What would you improve next?
+
+Possible improvements include:
+
+- Encrypt provider API keys in the database.
+- Add rate limiting to public assistant endpoints.
+- Add stronger validation for user IDs and request bodies.
+- Use HttpOnly, Secure, and SameSite cookie settings.
+- Add automated frontend and backend tests.
+- Add request logging and monitoring.
+- Improve CORS configuration for trusted embed domains.
+- Add a configurable backend URL instead of hard-coded deployment constants.
+- Add streaming AI responses for faster perceived response time.
+- Add text chat as a fallback when speech recognition is unavailable.
+
+
+17. QUICK REVISION CHECKLIST
+----------------------------
+
+Before an interview, I should be able to explain:
+
+[ ] What problem ChatPlug solves.
+[ ] Why the project has separate frontend and backend folders.
+[ ] What React does in this project.
+[ ] What Express does in this project.
+[ ] How Firebase login becomes a backend JWT cookie.
+[ ] How isAuth protects private routes.
+[ ] What is stored in the User model.
+[ ] How the Builder saves assistant configuration.
+[ ] Why AI provider keys stay on the backend.
+[ ] How assistant.js can run on any external website.
+[ ] How SpeechRecognition and SpeechSynthesis are used.
+[ ] How page context is collected.
+[ ] How the backend decides between an answer and navigation.
+[ ] How MongoDB, Gemini/OpenAI, and Razorpay fit into the system.
+[ ] How the project is built and deployed.
+[ ] What security and scalability improvements are still possible.
+
+
+END OF NOTES
+============
